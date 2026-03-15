@@ -1,0 +1,10 @@
+# Large files
+Miniconda3*.sh
+*.tar.gz
+*.zip
+__pycache__/
+*.index
+*.pth
+data/
+results/
+*.png   # we'll add architecture.png manually
