@@ -2,13 +2,17 @@
 # Python
 # =============================
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
 
 # =============================
-# Conda / environment
+# Conda / environments
 # =============================
+.env
+.venv
+env/
+venv/
+conda_env/
 Miniconda3*.sh
 
 # =============================
@@ -16,6 +20,7 @@ Miniconda3*.sh
 # =============================
 *.pth
 *.index
+*.pt
 
 # =============================
 # Large archives
@@ -23,22 +28,36 @@ Miniconda3*.sh
 *.zip
 *.tar
 *.tar.gz
+*.7z
 
 # =============================
-# Dataset files
+# Dataset storage
 # =============================
 data/
-*.csv
-*.csv.gz
-*.json
+
+# =============================
+# Experiment tracking
+# =============================
+wandb/
 
 # =============================
 # Experiment outputs
 # =============================
 results/
+outputs/
+logs/
 
 # =============================
-# Temporary / OS
+# Temporary files
+# =============================
+*.tmp
+*.log
+*.bak
+
+# =============================
+# OS / editor files
 # =============================
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
