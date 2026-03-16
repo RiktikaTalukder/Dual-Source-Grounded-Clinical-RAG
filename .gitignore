@@ -1,10 +1,44 @@
-# Large files
-Miniconda3*.sh
-*.tar.gz
-*.zip
+# =============================
+# Python
+# =============================
 __pycache__/
-*.index
+*.pyc
+*.pyo
+*.pyd
+
+# =============================
+# Conda / environment
+# =============================
+Miniconda3*.sh
+
+# =============================
+# Model files
+# =============================
 *.pth
+*.index
+
+# =============================
+# Large archives
+# =============================
+*.zip
+*.tar
+*.tar.gz
+
+# =============================
+# Dataset files
+# =============================
 data/
+*.csv
+*.csv.gz
+*.json
+
+# =============================
+# Experiment outputs
+# =============================
 results/
-*.png   # we'll add architecture.png manually
+
+# =============================
+# Temporary / OS
+# =============================
+.DS_Store
+Thumbs.db
