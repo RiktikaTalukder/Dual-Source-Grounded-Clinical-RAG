@@ -1,63 +1,45 @@
-# =============================
-# Python
-# =============================
+# =========================
+# SYSTEM / TEMP FILES
+# =========================
 __pycache__/
-*.py[cod]
-*$py.class
+.ipynb_checkpoints/
 
-# =============================
-# Conda / environments
-# =============================
-.env
-.venv
-env/
-venv/
-conda_env/
-Miniconda3*.sh
-
-# =============================
-# Model files
-# =============================
-*.pth
-*.index
-*.pt
-
-# =============================
-# Large archives
-# =============================
-*.zip
-*.tar
+# =========================
+# LARGE / RAW DATA FILES
+# =========================
+*.gz
 *.tar.gz
-*.7z
+*.zip
 
-# =============================
-# Dataset storage
-# =============================
-data/
+# =========================
+# MODEL FILES / INDEXES
+# =========================
+*.index
+*.pth
 
-# =============================
-# Experiment tracking
-# =============================
-wandb/
+# =========================
+# DATA (ignore all, allow samples)
+# =========================
+data/*
+!data/mimic_sample/
+!data/pmc_sample/
 
-# =============================
-# Experiment outputs
-# =============================
-results/
-outputs/
-logs/
+# =========================
+# RESULTS (ignore all, allow summaries)
+# =========================
+results/*
+!results/*.csv
+!results/*.json
+!results/figures/
 
-# =============================
-# Temporary files
-# =============================
-*.tmp
-*.log
-*.bak
+# =========================
+# IMAGES (allow important ones)
+# =========================
+*.png
+!docs/architecture.png
+!results/figures/*.png
 
-# =============================
-# OS / editor files
-# =============================
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+# =========================
+# ENV / INSTALLERS
+# =========================
+Miniconda3*.sh

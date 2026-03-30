@@ -111,3 +111,22 @@ Everything works. Ready for Week 2!
 **Next week (Farhana - Week 4) can start directly with:**
 ```bash
 jupyter notebook notebooks/01_data_eda.ipynb
+
+## Week 3 - Riktika (30/03/2026)
+
+**Completed all Phase 1 Foundation tasks:**
+
+- Explored full MIMIC-IV schema in `notebooks/01_mimic_schema_exploration.ipynb`
+- Successfully ran `src/mimic_preprocess.py`
+- Created `data/mimic_sample/` containing **200 cleaned discharge notes** + metadata JSON files
+- Built `data/patient_metadata.csv` (subject_id, age, gender, admission_type, top-5 ICD codes)
+- Total discharge notes available: **331,793**
+
+**Preprocessing description for thesis §5.1 (copy-paste this directly):**
+> "Discharge notes from MIMIC-IV-Note were loaded from discharge.csv.gz (331,793 notes). Residual PHI patterns (names, dates, MRNs) were replaced with placeholders. Text was normalized by collapsing multiple whitespaces. 200 representative notes were sampled (random_state=42) and saved as individual .txt files together with per-note metadata JSON. Patient metadata was constructed by joining patients.csv, admissions.csv, and diagnoses_icd.csv on subject_id/hadm_id, extracting the top-5 ICD codes per admission ordered by seq_num."
+
+**Notes:** Jupyter working directory issue resolved using `os.chdir()`.
+
+**Next week (Farhana - Week 4) can start directly with:**
+```bash
+jupyter notebook notebooks/01_data_eda.ipynb
