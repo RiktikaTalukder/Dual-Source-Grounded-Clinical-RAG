@@ -21,8 +21,9 @@ __pycache__/
 # DATA (ignore all, allow samples)
 # =========================
 data/*
-!data/mimic_sample/
-!data/pmc_sample/
+!data/pmc_literature/
+data/pmc_literature/*
+!data/pmc_literature/pmc_sample/
 
 # =========================
 # RESULTS (ignore all, allow summaries)
@@ -43,3 +44,6 @@ results/*
 # ENV / INSTALLERS
 # =========================
 Miniconda3*.sh
+
+# Weights & Biases
+wandb/
