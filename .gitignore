@@ -24,6 +24,7 @@ data/*
 !data/pmc_literature/
 data/pmc_literature/*
 !data/pmc_literature/pmc_sample/
+!data/indexes/pmc_texts.json
 
 # =========================
 # RESULTS (ignore all, allow summaries)

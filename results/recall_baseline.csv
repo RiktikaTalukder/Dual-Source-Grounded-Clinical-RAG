@@ -1,0 +1,52 @@
+question_id,question,recall@5,recall@10,answer
+16971978,Are complex coronary lesions more frequent in patients with diabetes mellitus?,1.0,1.0,yes
+16100194,Are physicians aware of the side effects of angiotensin-converting enzyme inhibitors?,0.8,0.8,no
+10966943,Amblyopia: is visual loss permanent?,1.0,1.0,no
+17578985,Parasacral sciatic nerve block: does the elicited motor response predict the success rate?,1.0,1.0,maybe
+22867778,Does responsibility affect the public's valuation of health care interventions?,0.6667,1.0,maybe
+25986020,Is zero central line-associated bloodstream infection rate sustainable?,1.0,1.0,yes
+25007420,Are there mental health differences between francophone and non-francophone populations in manitoba?,1.0,1.0,maybe
+10223070,Is perforation of the appendix a risk factor for tubal infertility and ectopic pregnancy?,0.8,0.8,maybe
+20605051,Does case-mix based reimbursement stimulate the development of process-oriented care delivery?,1.0,1.0,yes
+26686513,Cycloplegic autorefraction in young adults: is it mandatory?,1.0,1.0,maybe
+17462393,Does normothermic normokalemic simultaneous antegrade/retrograde perfusion improve myocardial oxygen,1.0,1.0,no
+24614851,Prognostic factors for cervical spondylotic amyotrophy: are signs of spinal cord involvement associa,0.6667,0.6667,yes
+21880023,Does exercise during pregnancy prevent postnatal depression?,0.5714,0.7143,no
+11146778,Risk stratification in emergency surgical patients: is the APACHE II score a reliable marker of phys,1.0,1.0,yes
+27044366,Detailed analysis of sputum and systemic inflammation in asthma phenotypes: are paucigranulocytic as,1.0,1.0,maybe
+24352924,Is portable ultrasonography accurate in the evaluation of Schanz pin placement during extremity frac,1.0,1.0,yes
+21198823,Can dobutamine stress echocardiography induce cardiac troponin elevation?,1.0,1.0,no
+9645785,Is a mandatory general surgery rotation necessary in the surgical clerkship?,1.0,1.0,no
+7482275,Necrotizing fasciitis: an indication for hyperbaric oxygenation therapy?,1.0,1.0,no
+23076787,Can increases in the cigarette tax rate be linked to cigarette retail prices?,1.0,1.0,no
+19925761,Diagnostic and therapeutic ureteroscopy: is dilatation of ureteral meatus always necessary?,0.6667,0.6667,no
+11867487,Does rugby headgear prevent concussion?,1.0,1.0,maybe
+25747932,Living in an urban environment and non-communicable disease risk in Thailand: Does timing matter?,1.0,1.0,yes
+9347843,"Laparoscopic-assisted ileocolic resections in patients with Crohn's disease: are abscesses, phlegmon",0.6667,0.6667,no
+17940352,Does HER2 immunoreactivity provide prognostic information in locally advanced urothelial carcinoma p,1.0,1.0,maybe
+15841770,Do inhaled steroids differ from cromones in terms of hospital admission rates for asthma in children,0.0,0.0,yes
+22876568,Is vitamin D deficiency a feature of pediatric celiac disease?,1.0,1.0,no
+25079920,Do parents recall and understand children's weight status information after BMI screening?,1.0,1.0,maybe
+24073931,Is the covering of the resection margin after distal pancreatectomy advantageous?,0.6667,0.6667,no
+15095519,Are patients with diabetes receiving the same message from dietitians and nurses?,1.0,1.0,no
+25446909,Oral mucocele/ranula: Another human immunodeficiency virus-related salivary gland disease?,0.75,0.75,yes
+20382292,"Knee extensor strength, dynamic stability, and functional ambulation: are they related in Parkinson'",0.8571,1.0,yes
+12040336,Cardiogenic shock complicating acute myocardial infarction in elderly patients: does admission to a ,1.0,1.0,no
+25255719,Hearing loss: an unknown complication of pre-eclampsia?,1.0,1.0,yes
+28177278,Does spontaneous remission occur in polyarteritis nodosa?,0.5,1.0,yes
+16538201,Does use of hydrophilic guidewires significantly improve technical success rates of peripheral PTA?,0.6667,0.6667,maybe
+12607120,Does anastomotic leakage affect functional outcome after rectal resection for cancer?,1.0,1.0,no
+26037986,30-Day and 1-year mortality in emergency general surgery laparotomies: an area of concern and need f,0.6667,0.6667,maybe
+20602101,Is hypoalbuminemia an independent prognostic factor in patients with gastric cancer?,1.0,1.0,no
+8738894,Diabetes mellitus among Swedish art glass workers--an effect of arsenic exposure?,0.6667,0.6667,no
+21946341,Is there a relationship between complex fractionated atrial electrograms recorded during atrial fibr,0.6667,0.6667,no
+21849531,Does growth hormone replacement therapy reduce mortality in adults with growth hormone deficiency?,1.0,1.0,no
+12963175,Can progression of valvar aortic stenosis be predicted accurately?,1.0,1.0,yes
+22758782,Regional anesthesia as compared with general anesthesia for surgery in geriatric patients with hip f,1.0,1.0,no
+24809662,Does concomitant anterior/apical repair during midurethral sling improve the overactive bladder comp,0.6667,0.6667,no
+27131771,Does left atrial appendage (LAA) occlusion device alter the echocardiography and electrocardiogram p,1.0,1.0,yes
+20629769,Is primary angioplasty an acceptable alternative to thrombolysis?,1.0,1.0,yes
+10381996,Clinician assessment for acute chest syndrome in febrile patients with sickle cell disease: is it ac,0.6667,0.6667,no
+18843057,Can you deliver accurate tidal volume by manual resuscitator?,1.0,1.0,no
+24964725,"Recovery Outcome Measures: Is There a Place for Culture, Attitudes, and Faith?",1.0,1.0,yes
+AVERAGE,,0.8722,0.8946,

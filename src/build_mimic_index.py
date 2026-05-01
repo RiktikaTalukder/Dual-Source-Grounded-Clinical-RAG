@@ -11,7 +11,7 @@ import pandas as pd
 from chunking_baselines import build_faiss_index, save_index
 
 # ── Load discharge notes from the .gz file in the project root ──
-discharge_path = "discharge.csv.gz"
+discharge_path = "data/mimic/processed/discharge.csv"
 
 print(f"Loading discharge notes from: {discharge_path}")
 discharge = pd.read_csv(discharge_path, low_memory=False)

@@ -26,6 +26,18 @@ RAW_DIR      = "data/pmc_literature/xml/"
 OUT_DIR      = "data/pmc_literature/pmc_sample/"
 MAX_ARTICLES = 500
 MIN_PARA_LEN = 40
+CLINICAL_KEYWORDS = [
+    "patient", "clinical trial", "randomized controlled",
+    "hospital admission", "icu", "intensive care",
+    "mortality", "treatment outcome", "adverse event",
+    "cohort study", "diagnosis", "therapeutic",
+    "pharmacotherapy", "comorbidity", "sepsis",
+    "heart failure", "diabetes", "hypertension",
+    "renal", "cardiac", "pulmonary"
+]
+
+# Require at least 2 keywords to match (not just any 1)
+MIN_KEYWORD_MATCHES = 2
 # ─────────────────────────────────────────────────────────
 
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -160,6 +172,13 @@ def parse_all():
             skipped += 1
             continue
 
+# ── Clinical keyword filter (strict: require 2+ matches) ──────
+        combined_text = (article["title"] + " " + article["abstract"]).lower()
+        matches = sum(1 for kw in CLINICAL_KEYWORDS if kw in combined_text)
+        if matches < MIN_KEYWORD_MATCHES:
+            skipped += 1
+            continue
+        # ─────────────────────────────────────────────────────────────
         out_filename = article["pmc_id"] + ".json"
         out_path = os.path.join(OUT_DIR, out_filename)
 
@@ -170,7 +189,7 @@ def parse_all():
 
     print(f"\nDone!")
     print(f"  Saved:   {saved} articles → {OUT_DIR}")
-    print(f"  Skipped: {skipped} articles (no content / parse errors)")
+    print(f"  Skipped: {skipped} articles (no content / parse errors / non-clinical)")
 
     if saved < MAX_ARTICLES:
         print(f"\nWARNING: Only saved {saved} articles (needed {MAX_ARTICLES}).")
