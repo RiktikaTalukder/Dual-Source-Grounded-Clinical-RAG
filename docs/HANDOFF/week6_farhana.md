@@ -22,7 +22,9 @@
   pushes these numbers higher and improves answer grounding.
 
 ### How to continue next week (Riktika):
-- Run: python src/pmc_retriever.py to verify retrieval works
+- IMPORTANT: pmc_articles.index is not committed (binary file, too large for Git).
+  Run `python src/pmc_embedder.py` first to rebuild the index before anything else.
+- After rebuilding, run: python src/pmc_retriever.py to verify retrieval works
 - Embedding model in use: pritamdeka/S-PubMedBert-MS-MARCO
 - FAISS index: data/indexes/pmc_articles.index
 - Recall baseline results: results/recall_baseline.csv
