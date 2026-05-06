@@ -27,4 +27,4 @@
 - `data/mimic_sample/` — 200 cleaned notes added
 - `data/patient_metadata.csv` — rebuilt
 - `data/indexes/mimic_chunks.index` — new (not committed, binary)
-- `data/indexes/mimic_chunks_text.csv` — new
+- `data/indexes/mimic_chunks_text.csv` — new (NOT committed, in .gitignore — rebuild with build_mimic_index.py)
