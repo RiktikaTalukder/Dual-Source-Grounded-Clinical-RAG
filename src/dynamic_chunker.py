@@ -14,7 +14,7 @@ def get_summarizer():
     if _summarizer is None:
         print("Loading flan-t5-base summarizer (first time ~1 min)...")
         _summarizer = pipeline(
-            "summarization",
+            "text2text-generation",
             model="google/flan-t5-base",
             tokenizer="google/flan-t5-base",
             max_new_tokens=150,
