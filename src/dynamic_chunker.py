@@ -1,38 +1,33 @@
 """
 dynamic_chunker.py
-Compresses a list of retrieved text chunks into a ~150-token summary
-using google/flan-t5-base.
+Compresses retrieved text chunks into a ~150-token summary
+using google/flan-t5-base directly (no pipeline — compatible with transformers v5).
 """
 
-from transformers import pipeline
-import textwrap
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
 
-_summarizer = None
+_model = None
+_tokenizer = None
 
-def get_summarizer():
-    global _summarizer
-    if _summarizer is None:
-        print("Loading flan-t5-base summarizer (first time ~1 min)...")
-        _summarizer = pipeline(
-            "text2text-generation",
-            model="google/flan-t5-base",
-            tokenizer="google/flan-t5-base",
-            max_new_tokens=150,
-            min_new_tokens=40,
-        )
+def get_model():
+    global _model, _tokenizer
+    if _model is None:
+        print("Loading flan-t5-base summarizer...")
+        _tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
+        _model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+        _model.eval()
         print("Summarizer ready.")
-    return _summarizer
+    return _model, _tokenizer
 
-def summarize_chunks(chunks: list[str], max_input_chars: int = 2000) -> str:
-    """
-    Takes a list of text chunks, joins them, and returns a
-    ~150-token clinical summary.
-    """
+def summarize_chunks(chunks: list, max_input_chars: int = 2000) -> str:
     combined = " ".join(chunks)[:max_input_chars]
-    prompt   = f"Summarize the following clinical notes concisely:\n\n{combined}"
-    result   = get_summarizer()(prompt, truncation=True)
-    return result[0]["summary_text"]
-
+    prompt = "Summarize the following clinical notes concisely:\n\n" + combined
+    model, tokenizer = get_model()
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
+    with torch.no_grad():
+        outputs = model.generate(**inputs, max_new_tokens=150, min_new_tokens=40)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 if __name__ == "__main__":
     test_chunks = [
