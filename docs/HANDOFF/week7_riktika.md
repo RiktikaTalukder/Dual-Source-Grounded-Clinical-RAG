@@ -28,3 +28,20 @@
 - `data/patient_metadata.csv` — rebuilt
 - `data/indexes/mimic_chunks.index` — new (not committed, binary)
 - `data/indexes/mimic_chunks_text.csv` — new (NOT committed, in .gitignore — rebuild with build_mimic_index.py)
+
+## Update — Week 7 completed fully (08 May 2026)
+- patient_retriever.py: DONE — hybrid similarity (0.6×cosine + 0.4×ICD Jaccard)
+- mimic_patients.index: DONE — 275 patient vectors, saved to data/indexes/
+- 03_patient_retrieval_test.ipynb: DONE — 5 sample queries with ranked results
+- dynamic_chunker.py: DONE — flan-t5-base summarizer, compresses chunks to ~150 tokens
+
+## How to call patient_retriever.py
+```python
+from src.patient_retriever import load_resources, retrieve
+model, meta, index = load_resources()
+results = retrieve("your query text here", {"icd1","icd2"}, model, meta, index)
+```
+
+## Note on ICD Jaccard scores
+Currently low (often 0.0) because sample has only 275 patients.
+Will improve significantly when full MIMIC data is used in later phases.
