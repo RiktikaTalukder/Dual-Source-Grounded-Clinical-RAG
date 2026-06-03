@@ -19,7 +19,7 @@ from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from evidence_aligner import align_evidence
-from config import CONFIDENCE_WEIGHTS, extract_icd_hints
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints
 import torch
 
 # Default equal weights (same as confidence_scorer.py Week 8)
@@ -80,9 +80,9 @@ class Pipeline:
         alpha, beta, gamma = self.weights
         raw = alpha * s_al + beta * s_ap + gamma * a_lp
 
-        penalty = a_lp < 0.3
+        penalty = a_lp < PENALTY_THRESHOLD
         if penalty:
-            raw *= 0.7
+            raw *= PENALTY_MULTIPLIER
 
         return {
             "s_al":       round(s_al, 4),

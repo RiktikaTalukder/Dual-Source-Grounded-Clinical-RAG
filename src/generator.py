@@ -21,7 +21,7 @@ from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
 from evidence_aligner import align_evidence
 from confidence_scorer import compute_confidence
-from config import CONFIDENCE_WEIGHTS, extract_icd_hints
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # ── Load patient retriever resources once at startup ───────────────────────
@@ -110,9 +110,9 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     s_ap = score_answer_patient(answer, patient_summaries)
     a_lp = score_alignment(literature_passages, patient_summaries)
     raw_conf = alpha * s_al + beta * s_ap + gamma * a_lp
-    penalty_applied = a_lp < 0.3
+    penalty_applied = a_lp < PENALTY_THRESHOLD
     if penalty_applied:
-        raw_conf *= 0.7
+        raw_conf *= PENALTY_MULTIPLIER
     scores = {
         "s_al":       round(s_al, 4),
         "s_ap":       round(s_ap, 4),

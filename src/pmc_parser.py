@@ -22,8 +22,9 @@ from lxml import etree
 from tqdm import tqdm
 
 # ── Configuration ─────────────────────────────────────────
-RAW_DIR      = "data/pmc_literature/xml/"
-OUT_DIR      = "data/pmc_literature/pmc_sample/"
+_base    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RAW_DIR  = os.path.join(_base, "data", "pmc_literature", "xml")
+OUT_DIR  = os.path.join(_base, "data", "pmc_literature", "pmc_sample")
 MAX_ARTICLES = 500
 MIN_PARA_LEN = 40
 CLINICAL_KEYWORDS = [

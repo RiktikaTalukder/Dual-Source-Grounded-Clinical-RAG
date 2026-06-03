@@ -87,6 +87,7 @@ def score_alignment(literature_passages: list, patient_passages: list) -> float:
     result = _nli(
         premise,
         text_pair=hypothesis,
+        top_k=None,
     )
 
     # result is a list of dicts: [{'label': 'ENTAILMENT', 'score': 0.xx}, ...]

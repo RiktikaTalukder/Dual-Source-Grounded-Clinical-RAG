@@ -18,6 +18,7 @@ Usage:
 
 import json
 import os
+import re
 import sys
 import numpy as np
 
@@ -175,7 +176,6 @@ def run_grid_search():
 
                 # Whole-word match to avoid substring false positives
                 # e.g. "no" must not match inside "not", "novel", "another"
-                import re
                 is_correct = 1 if re.search(r'\b' + re.escape(gold) + r'\b', answer_lower) else 0
 
                 confidences.append(result["confidence"])
