@@ -1,7 +1,8 @@
 import json
+import os
 from pathlib import Path
 
-RAW_DIR = Path("data/pubmedqa/raw")
+RAW_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) / "data" / "pubmedqa" / "raw"
 
 DATA_FILES = {
     "pqaa": RAW_DIR / "ori_pqaa.json",

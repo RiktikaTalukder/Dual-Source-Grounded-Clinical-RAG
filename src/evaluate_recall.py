@@ -59,7 +59,7 @@ def compute_recall_at_k(retrieved_passages, gold_contexts, k):
     return hits / max(len(gold_contexts), 1)
 
 def main():
-    os.makedirs("results", exist_ok=True)
+    os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
 
     print(f"Loading {NUM_QUESTIONS} PubMedQA questions...")
     questions = load_pubmedqa_sample(PUBMEDQA_PATH, NUM_QUESTIONS, RANDOM_SEED)

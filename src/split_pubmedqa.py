@@ -21,8 +21,9 @@ import os
 import random
 
 # ── Config ────────────────────────────────────────────────────────────────
-PQAL_PATH  = "data/pubmedqa/raw/ori_pqal.json"   # 1000 expert-labelled questions
-OUT_DIR = "data/pubmedqa/processed"
+_base      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PQAL_PATH  = os.path.join(_base, "data", "pubmedqa", "raw", "ori_pqal.json")
+OUT_DIR    = os.path.join(_base, "data", "pubmedqa", "processed")
 VAL_PATH   = os.path.join(OUT_DIR, "val_ids.json")
 TEST_PATH  = os.path.join(OUT_DIR, "test_ids.json")
 

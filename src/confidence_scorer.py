@@ -8,13 +8,16 @@ Formula:
     S(AL)      = cosine similarity: answer vs literature passages
     S(AP)      = cosine similarity: answer vs patient case passages
     A(L,P)     = NLI entailment score: literature vs patient evidence
-    Confidence = (1/3)*S(AL) + (1/3)*S(AP) + (1/3)*A(L,P)
-    If A(L,P) < 0.3: apply disagreement penalty → multiply by 0.7
+    Confidence = alpha*S(AL) + beta*S(AP) + gamma*A(L,P)
+    where (alpha, beta, gamma) = CONFIDENCE_WEIGHTS from config.py
+    Default best weights: (0.3, 0.3, 0.4) — found by Week 11 grid search
+    If A(L,P) < PENALTY_THRESHOLD: apply disagreement penalty → multiply by PENALTY_MULTIPLIER
 """
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER
 
 # ── Load models once at module level ──────────────────────────────────────
 print("Loading SentenceTransformer (ClinicalBERT)...")
@@ -121,12 +124,13 @@ def compute_confidence(
     a_lp = score_alignment(literature_passages, patient_passages)
 
     # Equal-weight combination
-    raw_confidence = (1/3) * s_al + (1/3) * s_ap + (1/3) * a_lp
+    alpha, beta, gamma = CONFIDENCE_WEIGHTS
+    raw_confidence = alpha * s_al + beta * s_ap + gamma * a_lp
 
     # Disagreement penalty
-    penalty_applied = a_lp < 0.3
+    penalty_applied = a_lp < PENALTY_THRESHOLD
     if penalty_applied:
-        raw_confidence *= 0.7
+        raw_confidence *= PENALTY_MULTIPLIER
 
     return {
         "s_al":       s_al,

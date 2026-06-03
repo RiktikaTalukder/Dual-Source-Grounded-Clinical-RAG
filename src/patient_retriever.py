@@ -106,7 +106,7 @@ def build_patient_index(model, meta):
     index = faiss.IndexFlatIP(dim)    # Inner Product = cosine on normalised vecs
     index.add(embeddings)
 
-    os.makedirs("data/indexes", exist_ok=True)
+    os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
     faiss.write_index(index, INDEX_PATH)
     print(f"✅ Patient index saved → {INDEX_PATH}  ({index.ntotal} vectors)")
     return index
