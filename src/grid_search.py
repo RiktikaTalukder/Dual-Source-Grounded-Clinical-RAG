@@ -62,7 +62,11 @@ def compute_ece(confidences, corrects, n_bins=10):
 
     for i in range(n_bins):
         lo, hi = bin_edges[i], bin_edges[i + 1]
-        in_bin = np.where((confidences >= lo) & (confidences < hi))[0]
+        # Use <= for the last bin so confidence=1.0 is not silently excluded
+        if i == n_bins - 1:
+            in_bin = np.where((confidences >= lo) & (confidences <= hi))[0]
+        else:
+            in_bin = np.where((confidences >= lo) & (confidences < hi))[0]
 
         if len(in_bin) == 0:
             bin_data.append({
@@ -168,9 +172,11 @@ def run_grid_search():
                 # FIX Bug 3: determine correctness by comparing answer to gold label
                 answer_lower = result["answer"].strip().lower()
                 gold         = q["gold_label"]   # "yes", "no", or "maybe"
-                # flan-t5-base tends to produce short answers — check if gold label
-                # appears anywhere in the answer text
-                is_correct = 1 if gold in answer_lower else 0
+
+                # Whole-word match to avoid substring false positives
+                # e.g. "no" must not match inside "not", "novel", "another"
+                import re
+                is_correct = 1 if re.search(r'\b' + re.escape(gold) + r'\b', answer_lower) else 0
 
                 confidences.append(result["confidence"])
                 corrects.append(is_correct)

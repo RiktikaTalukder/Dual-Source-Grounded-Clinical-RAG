@@ -22,7 +22,7 @@ _embedder = SentenceTransformer("medicalai/ClinicalBERT")
 
 print("Loading NLI model (bart-large-mnli)...")
 _nli = pipeline(
-    "zero-shot-classification",
+    "text-classification",
     model="facebook/bart-large-mnli",
     device=-1        # -1 = CPU. Change to 0 if you have a GPU.
 )
@@ -67,31 +67,29 @@ def score_answer_patient(answer: str, patient_passages: list) -> float:
     score          = float(np.dot(answer_vec, patient_vec))
     return round(score, 4)
 
-# ── A(L,P): literature vs patient agreement (NLI) ────────────────────────
+# ── A(L,P): literature vs patient agreement (NLI) ────────────────────
 def score_alignment(literature_passages: list, patient_passages: list) -> float:
     """
     Uses NLI to check whether literature ENTAILS (agrees with) patient evidence.
-    
-    We format the comparison as a single text and classify it as entailment,
-    contradiction, or neutral using zero-shot classification.
-    
-    Range: 0.0 (completely disagree) to 1.0 (fully agree)
+
+    Correct approach: pass literature as premise and patient evidence as
+    hypothesis to the text-classification pipeline using text_pair,
+    which performs true NLI between two texts.
+
+    Range: 0.0 (contradiction/neutral) to 1.0 (full entailment)
     """
     premise    = " ".join(literature_passages)[:800]
     hypothesis = " ".join(patient_passages)[:400]
 
-    # Format as a single NLI-style statement for zero-shot classification
-    # "Given the literature, the patient evidence is consistent" 
-    nli_input = f"Premise: {premise} Hypothesis: {hypothesis}"
-
     result = _nli(
-        nli_input,
-        candidate_labels=["entailment", "contradiction", "neutral"],
+        premise,
+        text_pair=hypothesis,
     )
 
-    labels = result["labels"]
-    scores = result["scores"]
-    entailment_score = scores[labels.index("entailment")]
+    # result is a list of dicts: [{'label': 'ENTAILMENT', 'score': 0.xx}, ...]
+    # label names vary by model — bart-large-mnli uses ENTAILMENT/CONTRADICTION/NEUTRAL
+    label_map = {lab["label"].upper(): lab["score"] for lab in result}
+    entailment_score = label_map.get("ENTAILMENT", 0.0)
     return round(float(entailment_score), 4)
 
 # ── Main function: compute full confidence score ───────────────────────────

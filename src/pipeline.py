@@ -19,47 +19,11 @@ from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from evidence_aligner import align_evidence
-from config import CONFIDENCE_WEIGHTS
+from config import CONFIDENCE_WEIGHTS, extract_icd_hints
 import torch
 
 # Default equal weights (same as confidence_scorer.py Week 8)
 DEFAULT_WEIGHTS = CONFIDENCE_WEIGHTS   # (0.3, 0.3, 0.4) — best weights from Week 11 grid search
-
-def _extract_icd_hints(query_text: str) -> set:
-    """
-    Extract rough ICD code hints from free-text query using keyword matching.
-    This gives the patient retriever's Jaccard component something to work with
-    instead of always receiving an empty set.
-    """
-    q = query_text.lower()
-    hints = set()
-    # Common clinical concept → representative ICD code mappings
-    keyword_map = {
-        "diabetes":        {"E11", "25001"},
-        "heart failure":   {"I50", "42831"},
-        "pneumonia":       {"J18", "4861"},
-        "sepsis":          {"A41", "99591"},
-        "hypertension":    {"I10", "4019"},
-        "copd":            {"J44", "49121"},
-        "stroke":          {"I63", "43491"},
-        "myocardial":      {"I21", "41001"},
-        "asthma":          {"J45", "49300"},
-        "kidney":          {"N18", "5859"},
-        "renal":           {"N18", "5859"},
-        "cancer":          {"C80", "1999"},
-        "obesity":         {"E66", "2780"},
-        "depression":      {"F32", "29620"},
-        "appendicitis":    {"K37", "5409"},
-        "atrial":          {"I48", "42731"},
-        "anticoagulation": {"Z79", "V5861"},
-        "cholesterol":     {"E78", "2720"},
-        "vitamin d":       {"E55", "2689"},
-        "fracture":        {"M84", "8290"},
-    }
-    for keyword, codes in keyword_map.items():
-        if keyword in q:
-            hints.update(codes)
-    return hints
 
 class Pipeline:
     """
@@ -87,7 +51,7 @@ class Pipeline:
     def _generate(self, prompt: str) -> str:
         """Run LLM and return answer string."""
         inputs = self.tokenizer(
-            prompt, return_tensors="pt", truncation=True, max_length=1024
+            prompt, return_tensors="pt", truncation=True, max_length=512
         )
         with torch.no_grad():
             outputs = self.llm.generate(
@@ -151,7 +115,7 @@ class Pipeline:
         # Step 2: Retrieve patient cases
         pat_results = retrieve(
             query_text=query,
-            query_icd=_extract_icd_hints(query),
+            query_icd=extract_icd_hints(query),
             model=self.pat_model,
             meta=self.pat_meta,
             index=self.pat_index,

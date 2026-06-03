@@ -3,9 +3,13 @@ import os
 import re
 from tqdm import tqdm
 
-DATA_DIR = "data"
-SAMPLE_DIR = f"{DATA_DIR}/mimic_sample"
-os.makedirs(SAMPLE_DIR, exist_ok=True)
+import os as _os
+_base      = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+DATA_DIR   = _os.path.join(_base, "data")
+SAMPLE_DIR = _os.path.join(_base, "data", "mimic", "mimic_sample")
+PROC_DIR   = _os.path.join(_base, "data", "mimic", "processed")
+_os.makedirs(SAMPLE_DIR, exist_ok=True)
+_os.makedirs(PROC_DIR,   exist_ok=True)
 
 def clean_text(text: str) -> str:
     """Extra safety cleaning (MIMIC is already de-identified)"""
@@ -18,7 +22,7 @@ def clean_text(text: str) -> str:
 
 if __name__ == "__main__":
     print("Loading tables...")
-    discharge = pd.read_csv(f"{DATA_DIR}/discharge.csv.gz", low_memory=False)
+    discharge = pd.read_csv(os.path.join(DATA_DIR, "discharge.csv.gz"), low_memory=False)
 
     # === 1. Create 200 cleaned sample notes ===
     print("Creating 200 cleaned sample notes...")
@@ -37,9 +41,9 @@ if __name__ == "__main__":
 
     # === 2. Build patient_metadata.csv ===
     print("Building patient_metadata.csv...")
-    patients = pd.read_csv(f"{DATA_DIR}/patients.csv.gz", low_memory=False)
-    admissions = pd.read_csv(f"{DATA_DIR}/admissions.csv.gz", low_memory=False)
-    diagnoses = pd.read_csv(f"{DATA_DIR}/diagnoses_icd.csv.gz", low_memory=False)
+    patients   = pd.read_csv(os.path.join(DATA_DIR, "patients.csv.gz"),   low_memory=False)
+    admissions = pd.read_csv(os.path.join(DATA_DIR, "admissions.csv.gz"), low_memory=False)
+    diagnoses  = pd.read_csv(os.path.join(DATA_DIR, "diagnoses_icd.csv.gz"), low_memory=False)
 
     top_icd = (diagnoses.sort_values('seq_num')
             .groupby(['subject_id', 'hadm_id'])['icd_code']
@@ -53,7 +57,7 @@ if __name__ == "__main__":
     meta = meta.rename(columns={'anchor_age': 'age'})
     meta['icd_codes_top5'] = meta['icd_code'].fillna('')
     meta = meta[['subject_id', 'age', 'gender', 'admission_type', 'icd_codes_top5']]
-    meta.to_csv(f"{DATA_DIR}/mimic/processed/patient_metadata.csv", index=False)
+    meta.to_csv(os.path.join(PROC_DIR, "patient_metadata.csv"), index=False)
 
     print(f"✅ patient_metadata.csv created with {len(meta):,} rows")
     print(meta.head())

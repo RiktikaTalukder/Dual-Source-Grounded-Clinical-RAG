@@ -26,11 +26,11 @@ print(f"Using {len(sample_notes)} sampled notes for index building")
 index, chunks = build_faiss_index(sample_notes, strategy="fixed")
 
 # Save to disk
-os.makedirs("data/indexes", exist_ok=True)
+os.makedirs(os.path.join(_base, "data", "indexes"), exist_ok=True)
 save_index(
     index, chunks,
-    index_path="data/indexes/mimic_chunks.index",
-    chunks_path="data/indexes/mimic_chunks_text.csv"
+    index_path=os.path.join(_base, "data", "indexes", "mimic_chunks.index"),
+    chunks_path=os.path.join(_base, "data", "indexes", "mimic_chunks_text.csv")
 )
 
 print("\n✅ Done! FAISS index built and saved.")

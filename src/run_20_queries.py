@@ -42,6 +42,7 @@ OUTPUT_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "results", "generation_samples", "dual_source_20.json"
 )
+os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
 
 def main():
     print(f"Running dual_source_rag on {len(QUERIES)} queries...")
