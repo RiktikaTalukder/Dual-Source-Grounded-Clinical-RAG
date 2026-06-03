@@ -18,11 +18,48 @@ from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from evidence_aligner import align_evidence
+from config import CONFIDENCE_WEIGHTS
 import torch
 
 # Default equal weights (same as confidence_scorer.py Week 8)
-DEFAULT_WEIGHTS = (1/3, 1/3, 1/3)
+DEFAULT_WEIGHTS = CONFIDENCE_WEIGHTS   # (0.3, 0.3, 0.4) — best weights from Week 11 grid search
 
+def _extract_icd_hints(query_text: str) -> set:
+    """
+    Extract rough ICD code hints from free-text query using keyword matching.
+    This gives the patient retriever's Jaccard component something to work with
+    instead of always receiving an empty set.
+    """
+    q = query_text.lower()
+    hints = set()
+    # Common clinical concept → representative ICD code mappings
+    keyword_map = {
+        "diabetes":        {"E11", "25001"},
+        "heart failure":   {"I50", "42831"},
+        "pneumonia":       {"J18", "4861"},
+        "sepsis":          {"A41", "99591"},
+        "hypertension":    {"I10", "4019"},
+        "copd":            {"J44", "49121"},
+        "stroke":          {"I63", "43491"},
+        "myocardial":      {"I21", "41001"},
+        "asthma":          {"J45", "49300"},
+        "kidney":          {"N18", "5859"},
+        "renal":           {"N18", "5859"},
+        "cancer":          {"C80", "1999"},
+        "obesity":         {"E66", "2780"},
+        "depression":      {"F32", "29620"},
+        "appendicitis":    {"K37", "5409"},
+        "atrial":          {"I48", "42731"},
+        "anticoagulation": {"Z79", "V5861"},
+        "cholesterol":     {"E78", "2720"},
+        "vitamin d":       {"E55", "2689"},
+        "fracture":        {"M84", "8290"},
+    }
+    for keyword, codes in keyword_map.items():
+        if keyword in q:
+            hints.update(codes)
+    return hints
 
 class Pipeline:
     """
@@ -114,7 +151,7 @@ class Pipeline:
         # Step 2: Retrieve patient cases
         pat_results = retrieve(
             query_text=query,
-            query_icd=set(),
+            query_icd=_extract_icd_hints(query),
             model=self.pat_model,
             meta=self.pat_meta,
             index=self.pat_index,
@@ -122,27 +159,17 @@ class Pipeline:
         )
         if pat_results and isinstance(pat_results[0], dict):
             pat_summaries = [
-                r.get("summary", r.get("text", r.get("note_text", str(r))))
+                (f"Patient: age {r.get('age','?')}, gender {r.get('gender','?')}, "
+                 f"admission type {r.get('admission_type','?')}, "
+                 f"ICD codes {r.get('icd_codes','?')}. "
+                 f"Similarity score: {round(r.get('rank_score', 0), 3)}.")
                 for r in pat_results
             ]
         else:
             pat_summaries = [str(r) for r in pat_results]
 
-        # Step 3: Build prompt
-        lit_block = "\n".join(
-            f"[LIT {i+1}] {p.strip()}" for i, p in enumerate(lit_passages)
-        )
-        pat_block = "\n".join(
-            f"[PATIENT {i+1}] {s.strip()}" for i, s in enumerate(pat_summaries)
-        )
-        prompt = (
-            "[SYSTEM: You are a clinical AI assistant. "
-            "Answer the question using the evidence below. "
-            "Be concise and medically accurate.]\n\n"
-            f"[LITERATURE EVIDENCE:\n{lit_block}]\n\n"
-            f"[PATIENT CASE EVIDENCE:\n{pat_block}]\n\n"
-            f"[QUESTION: {query}]\n\n[ANSWER:]"
-        )
+        # Step 3: Build prompt using evidence_aligner (consistent with generator.py)
+        prompt = align_evidence(query, lit_passages, pat_summaries)
 
         # Step 4: Generate answer
         answer = self._generate(prompt)

@@ -49,6 +49,41 @@ def _generate_answer(prompt: str, max_new_tokens: int = 200) -> str:
         )
     return _tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
+def _extract_icd_hints(query_text: str) -> set:
+    """
+    Extract rough ICD code hints from free-text query using keyword matching.
+    This gives the patient retriever's Jaccard component something to work with
+    instead of always receiving an empty set.
+    """
+    q = query_text.lower()
+    hints = set()
+    # Common clinical concept → representative ICD code mappings
+    keyword_map = {
+        "diabetes":        {"E11", "25001"},
+        "heart failure":   {"I50", "42831"},
+        "pneumonia":       {"J18", "4861"},
+        "sepsis":          {"A41", "99591"},
+        "hypertension":    {"I10", "4019"},
+        "copd":            {"J44", "49121"},
+        "stroke":          {"I63", "43491"},
+        "myocardial":      {"I21", "41001"},
+        "asthma":          {"J45", "49300"},
+        "kidney":          {"N18", "5859"},
+        "renal":           {"N18", "5859"},
+        "cancer":          {"C80", "1999"},
+        "obesity":         {"E66", "2780"},
+        "depression":      {"F32", "29620"},
+        "appendicitis":    {"K37", "5409"},
+        "atrial":          {"I48", "42731"},
+        "anticoagulation": {"Z79", "V5861"},
+        "cholesterol":     {"E78", "2720"},
+        "vitamin d":       {"E55", "2689"},
+        "fracture":        {"M84", "8290"},
+    }
+    for keyword, codes in keyword_map.items():
+        if keyword in q:
+            hints.update(codes)
+    return hints
 
 def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     """
@@ -69,7 +104,7 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     print(f"  [1/5] Retrieving literature...")
     lit_results = retrieve_literature(query, k=top_k_lit)
     if lit_results and isinstance(lit_results[0], dict):
-        literature_passages = [r.get("text", r.get("chunk", str(r))) for r in lit_results]
+        literature_passages = [r.get("passage", str(r)) for r in lit_results]
     else:
         literature_passages = [str(r) for r in lit_results]
 
@@ -77,7 +112,7 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     print(f"  [2/5] Retrieving patient cases...")
     pat_results = retrieve(
         query_text=query,
-        query_icd=set(),
+        query_icd=_extract_icd_hints(query),
         model=_pat_model,
         meta=_pat_meta,
         index=_pat_index,
@@ -85,7 +120,10 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     )
     if pat_results and isinstance(pat_results[0], dict):
         patient_summaries = [
-            r.get("summary", r.get("text", r.get("note_text", str(r))))
+            (f"Patient: age {r.get('age','?')}, gender {r.get('gender','?')}, "
+             f"admission type {r.get('admission_type','?')}, "
+             f"ICD codes {r.get('icd_codes','?')}. "
+             f"Similarity score: {round(r.get('rank_score', 0), 3)}.")
             for r in pat_results
         ]
     else:

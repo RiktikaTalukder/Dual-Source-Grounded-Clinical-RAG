@@ -10,10 +10,16 @@ import numpy as np
 import pandas as pd
 import os
 
-# ── Load ClinicalBERT ──────────────────────────────────────────────
-print("Loading ClinicalBERT... (this takes ~1 minute first time)")
-model = SentenceTransformer("medicalai/ClinicalBERT")
-print("Model loaded!")
+# ── ClinicalBERT — loaded lazily on first use ──────────────────────
+_cb_model = None
+
+def _get_model():
+    global _cb_model
+    if _cb_model is None:
+        print("Loading ClinicalBERT... (this takes ~1 minute first time)")
+        _cb_model = SentenceTransformer("medicalai/ClinicalBERT")
+        print("ClinicalBERT loaded!")
+    return _cb_model
 
 
 # ── Helper: split text into word-based chunks ──────────────────────
@@ -65,6 +71,7 @@ def chunk_dynamic(text, query, top_n=3, size=256):
         return []
 
     # 2. Embed query and all candidate chunks
+    model = _get_model()
     query_emb = model.encode([query], normalize_embeddings=True)
     chunk_embs = model.encode(candidates, normalize_embeddings=True)
 
@@ -95,6 +102,7 @@ def build_faiss_index(notes_list, strategy="fixed"):
             raise ValueError("Use 'fixed' or 'sliding' for FAISS index building")
 
     print(f"Total chunks: {len(all_chunks)} — now embedding...")
+    model = _get_model()
     embeddings = model.encode(all_chunks, batch_size=32,
                                show_progress_bar=True,
                                normalize_embeddings=True)

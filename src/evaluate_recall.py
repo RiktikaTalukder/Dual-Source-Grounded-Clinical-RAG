@@ -11,8 +11,9 @@ import os
 import random
 from pmc_retriever import retrieve_literature   # our function from Step 5
 
-PUBMEDQA_PATH = "data/pubmedqa/raw/ori_pqal.json"  # adjust path if different
-RESULTS_PATH  = "results/recall_baseline.csv"
+_base         = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PUBMEDQA_PATH = os.path.join(_base, "data", "pubmedqa", "raw", "ori_pqal.json")
+RESULTS_PATH  = os.path.join(_base, "results", "recall_baseline.csv")
 NUM_QUESTIONS = 50
 RANDOM_SEED   = 42
 

@@ -70,25 +70,25 @@ def score_answer_patient(answer: str, patient_passages: list) -> float:
 # ── A(L,P): literature vs patient agreement (NLI) ────────────────────────
 def score_alignment(literature_passages: list, patient_passages: list) -> float:
     """
-    Uses NLI (Natural Language Inference) to check whether
-    the literature ENTAILS (agrees with) the patient evidence.
-
-    We combine all literature into one 'premise' and all patient
-    passages into one 'hypothesis', then ask the model how likely
-    it is that they agree (entailment score).
-
+    Uses NLI to check whether literature ENTAILS (agrees with) patient evidence.
+    
+    We format the comparison as a single text and classify it as entailment,
+    contradiction, or neutral using zero-shot classification.
+    
     Range: 0.0 (completely disagree) to 1.0 (fully agree)
     """
-    # Combine all passages into single strings
-    premise    = " ".join(literature_passages)[:1000]   # cap length for speed
-    hypothesis = " ".join(patient_passages)[:500]
+    premise    = " ".join(literature_passages)[:800]
+    hypothesis = " ".join(patient_passages)[:400]
+
+    # Format as a single NLI-style statement for zero-shot classification
+    # "Given the literature, the patient evidence is consistent" 
+    nli_input = f"Premise: {premise} Hypothesis: {hypothesis}"
 
     result = _nli(
-        premise,
+        nli_input,
         candidate_labels=["entailment", "contradiction", "neutral"],
     )
 
-    # Find the entailment score specifically
     labels = result["labels"]
     scores = result["scores"]
     entailment_score = scores[labels.index("entailment")]

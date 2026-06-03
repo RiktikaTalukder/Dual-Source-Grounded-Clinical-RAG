@@ -12,13 +12,11 @@ import faiss
 from sentence_transformers import SentenceTransformer
 
 # ── Config ──────────────────────────────────────────────────────────────
-_base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_base         = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_NAME    = "medicalai/ClinicalBERT"
-INDEX_PATH = os.path.join(_base, "data", "indexes", "mimic_patients.index")
-import os
-_base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-METADATA_PATH = os.path.join(_base, "data", "patient_metadata.csv") if os.path.exists(os.path.join(_base, "data", "patient_metadata.csv")) else os.path.join(_base, "data", "mimic", "processed", "patient_metadata.csv")
-NOTES_DIR     = "data/mimic/mimic_sample"
+INDEX_PATH    = os.path.join(_base, "data", "indexes", "mimic_patients.index")
+METADATA_PATH = os.path.join(_base, "data", "mimic", "processed", "patient_metadata.csv")
+NOTES_DIR     = os.path.join(_base, "data", "mimic", "mimic_sample")
 ALPHA         = 0.6   # weight for embedding similarity
 BETA          = 0.4   # weight for ICD Jaccard overlap
 TOP_K         = 3
