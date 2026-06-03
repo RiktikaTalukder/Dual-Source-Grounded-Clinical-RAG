@@ -8,11 +8,15 @@ _base      = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 DATA_DIR   = _os.path.join(_base, "data")
 SAMPLE_DIR = _os.path.join(_base, "data", "mimic", "mimic_sample")
 PROC_DIR   = _os.path.join(_base, "data", "mimic", "processed")
-_os.makedirs(SAMPLE_DIR, exist_ok=True)
-_os.makedirs(PROC_DIR,   exist_ok=True)
 
 def clean_text(text: str) -> str:
-    """Extra safety cleaning (MIMIC is already de-identified)"""
+    """
+    Extra safety cleaning layer.
+    De-identification note: MIMIC-IV discharge notes are de-identified by PhysioNet
+    prior to release. The PHI replacement performed here is an additional safety layer,
+    not the primary de-identification mechanism. All privacy guarantees derive from
+    PhysioNet's process.
+    """
     text = re.sub(r'\b[A-Z][a-z]+,\s*[A-Z][a-z]+\b', '[NAME]', text)
     text = re.sub(r'\b\d{3}-\d{3}-\d{4}\b', '[PHONE]', text)
     text = re.sub(r'\b\d{1,2}/\d{1,2}/\d{2,4}\b', '[DATE]', text)
@@ -21,6 +25,10 @@ def clean_text(text: str) -> str:
     return text
 
 if __name__ == "__main__":
+    # makedirs moved inside __main__ so they don't run at import time
+    _os.makedirs(SAMPLE_DIR, exist_ok=True)
+    _os.makedirs(PROC_DIR,   exist_ok=True)
+
     print("Loading tables...")
     discharge = pd.read_csv(os.path.join(DATA_DIR, "discharge.csv.gz"), low_memory=False)
 

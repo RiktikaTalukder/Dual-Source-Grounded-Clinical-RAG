@@ -81,8 +81,8 @@ def score_alignment(literature_passages: list, patient_passages: list) -> float:
 
     Range: 0.0 (contradiction/neutral) to 1.0 (full entailment)
     """
-    premise    = " ".join(literature_passages)[:800]
-    hypothesis = " ".join(patient_passages)[:400]
+    premise    = " ".join(literature_passages)[:600]
+    hypothesis = " ".join(patient_passages)[:350]
 
     result = _nli(
         premise,

@@ -1,7 +1,18 @@
 """
 chunking_baselines.py
 Week 5 — Riktika
-3 chunking strategies for MIMIC discharge notes.
+3 chunking strategies for MIMIC discharge notes:
+
+  A. Fixed-size chunks  (chunk_fixed)   -- 512 words, 10% overlap
+  B. Sliding window     (chunk_sliding) -- 256 words, 50% overlap
+  C. Dynamic selection  (chunk_dynamic) -- query-guided, top-n chunks
+
+Design note:
+  build_faiss_index() supports only fixed and sliding strategies.
+  Dynamic chunking is query-dependent and cannot be pre-indexed.
+  The selection changes for every query. It is called at retrieval
+  time within the evidence pipeline, not during index building.
+  The MIMIC chunk FAISS index is built from fixed chunking.
 """
 
 from sentence_transformers import SentenceTransformer
@@ -58,6 +69,10 @@ def chunk_dynamic(text, query, top_n=3, size=256):
     """
     Split into small chunks, embed them + the query,
     then return the top_n chunks most similar to the query.
+
+    Design note: this function is NOT used to build a FAISS index
+    because the chunk selection is query-dependent and changes for
+    every query. It is called at query time within the pipeline.
     """
     # 1. Make candidate chunks (sliding window, no overlap)
     words = split_into_words(text)
@@ -99,7 +114,7 @@ def build_faiss_index(notes_list, strategy="fixed"):
         elif strategy == "sliding":
             all_chunks.extend(chunk_sliding(note))
         else:
-            raise ValueError("Use 'fixed' or 'sliding' for FAISS index building")
+            raise ValueError("Dynamic chunking is query-dependent and runs at retrieval time. Use 'fixed' or 'sliding' for FAISS index building.")
 
     print(f"Total chunks: {len(all_chunks)} — now embedding...")
     model = _get_model()

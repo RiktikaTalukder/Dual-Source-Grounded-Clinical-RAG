@@ -248,7 +248,7 @@ def run_grid_search():
 
     print(f"\nBest combo: {best_name}  (ECE = {best_ece})")
 
-    # Save results
+    # ── Save full results JSON ─────────────────────────────────────────────
     base    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     out_dir = os.path.join(base, "results", "grid_search")
     os.makedirs(out_dir, exist_ok=True)
@@ -261,8 +261,9 @@ def run_grid_search():
 
     with open(out_path, "w") as f:
         json.dump(save_data, f, indent=2)
-    print(f"\n[grid_search] Results saved to: {out_path}")
+    print(f"\n[grid_search] Full results saved to: {out_path}")
 
+    # ── Save best_weights.json ─────────────────────────────────────────────
     best_weights = list(all_results[best_name]["weights"])
     best_path    = os.path.join(out_dir, "best_weights.json")
     with open(best_path, "w") as f:
@@ -272,6 +273,32 @@ def run_grid_search():
             "best_ece":        best_ece
         }, f, indent=2)
     print(f"[grid_search] Best weights saved to: {best_path}")
+
+    # ── Save weight_tuning.csv (committed to GitHub as permanent record) ───
+    import csv
+    csv_path = os.path.join(base, "results", "weight_tuning.csv")
+    csv_rows = []
+    for name, res in all_results.items():
+        w = res["weights"]
+        csv_rows.append({
+            "combo_name":    name,
+            "alpha":         round(w[0], 4),
+            "beta":          round(w[1], 4),
+            "gamma":         round(w[2], 4),
+            "ece":           res["ece"],
+            "accuracy":      res.get("accuracy", ""),
+            "avg_confidence": res["avg_conf"],
+            "penalties":     res.get("penalties", ""),
+            "is_best":       "YES" if name == best_name else "no"
+        })
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=csv_rows[0].keys())
+        writer.writeheader()
+        writer.writerows(csv_rows)
+    print(f"[grid_search] weight_tuning.csv saved to: {csv_path}")
+    print(f"              (this file will be tracked by git)")
+
     return all_results, best_name
 
 
