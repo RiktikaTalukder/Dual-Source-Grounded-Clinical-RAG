@@ -17,6 +17,13 @@ PMC_DATA_PATH   = os.path.join(_base, "data", "pmc_literature", "pmc_sample")
 INDEX_SAVE_PATH = os.path.join(_base, "data", "indexes", "pmc_articles.index")
 TEXTS_SAVE_PATH = os.path.join(_base, "data", "indexes", "pmc_texts.json")
 MODEL_NAME      = "pritamdeka/S-PubMedBert-MS-MARCO"
+
+# Import pinned revision hash from config (GAP 10 fix)
+import sys as _sys
+import os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from config import MODEL_REVISIONS
+MODEL_REVISION  = MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"]
 BATCH_SIZE      = 32
 # ────────────────────────────────────────────────────────────────────────────
 

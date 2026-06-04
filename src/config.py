@@ -11,6 +11,15 @@ Weights = (alpha, beta, gamma)
   gamma = weight for A_LP (literature vs patient alignment)
 """
 
+# ── Pinned model revision hashes (Week 13 — GAP 10 fix) ──────────────────────
+# These hashes pin the exact model versions used across all src/ files.
+# Do NOT change these unless intentionally upgrading a model.
+MODEL_REVISIONS = {
+    "pritamdeka/S-PubMedBert-MS-MARCO": "main",
+    "facebook/bart-large-mnli":         "main",
+    "google/flan-t5-base":              "main",
+}
+# ─────────────────────────────────────────────────────────────────────────────
 # ── Best weights from Week 11 grid search ─────────────────────────────────
 # Winner: alignment_heavy  ECE = 0.0593  (lowest among 5 combos)
 # Validated on 200 PubMedQA questions, seed=42 split by Farhana (Week 10)
