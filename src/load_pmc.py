@@ -1,9 +1,23 @@
+"""
+load_pmc.py
+Week 2 — Farhana (M2)
+
+Helper script for setting up the local PMC folder structure and writing
+a starter manifest for PMC article IDs.
+
+Note: This file is a setup utility only. Nothing in the pipeline imports it.
+All actual PMC loading is handled by pmc_parser.py and pmc_embedder.py.
+"""
+
+import os
 from pathlib import Path
 import json
 
-BASE_DIR = Path("data/pmc_literature")
-RAW_DIR = BASE_DIR / "raw"
-XML_DIR = BASE_DIR / "xml"
+# ── Absolute paths (anchored to repo root via __file__) ───────────────────
+_base    = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = _base / "data" / "pmc_literature"
+RAW_DIR  = BASE_DIR / "raw"
+XML_DIR  = BASE_DIR / "xml"
 PARSED_DIR = BASE_DIR / "parsed"
 META_DIR = BASE_DIR / "metadata"
 

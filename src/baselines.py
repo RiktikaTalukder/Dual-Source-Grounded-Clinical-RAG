@@ -25,25 +25,36 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
+from config import extract_icd_hints
 
-# ── Load shared LLM once (same model as generator.py) ─────────────────────
-print("[baselines] Loading flan-t5-base...")
-_tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
-_llm = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
-_llm.eval()
-print("[baselines] LLM ready.")
+# ── Lazy-loaded resources (only loaded when first needed) ─────────────────
+_tokenizer  = None
+_llm        = None
+_pat_model  = None
+_pat_meta   = None
+_pat_index  = None
 
-# ── Load patient retriever resources ──────────────────────────────────────
-print("[baselines] Loading patient retriever resources...")
-_pat_model, _pat_meta, _pat_index = load_resources()
-print("[baselines] Patient resources ready.")
+def _ensure_resources():
+    """Load all models the first time any baseline function is called."""
+    global _tokenizer, _llm, _pat_model, _pat_meta, _pat_index
+    if _llm is None:
+        print("[baselines] Loading flan-t5-base...")
+        _tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
+        _llm = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+        _llm.eval()
+        print("[baselines] LLM ready.")
+    if _pat_model is None:
+        print("[baselines] Loading patient retriever resources...")
+        _pat_model, _pat_meta, _pat_index = load_resources()
+        print("[baselines] Patient resources ready.")
 
 
 def _generate(prompt: str) -> str:
     """Run flan-t5-base on a prompt and return the answer string.
     Identical setup to generator.py so results are comparable."""
+    _ensure_resources()
     inputs = _tokenizer(prompt, return_tensors="pt",
-                        truncation=True, max_length=1024)
+                        truncation=True, max_length=512)
     with torch.no_grad():
         outputs = _llm.generate(
             **inputs,
@@ -107,9 +118,10 @@ def baseline_patient_only(query: str, k: int = 3) -> dict:
     No literature evidence used.
     Same LLM and confidence scorer as dual_source_rag.
     """
+    _ensure_resources()
     pat_results = retrieve(
         query_text=query,
-        query_icd=set(),
+        query_icd=extract_icd_hints(query),
         model=_pat_model,
         meta=_pat_meta,
         index=_pat_index,
@@ -117,7 +129,10 @@ def baseline_patient_only(query: str, k: int = 3) -> dict:
     )
     if pat_results and isinstance(pat_results[0], dict):
         summaries = [
-            r.get("summary", r.get("text", r.get("note_text", str(r))))
+            (f"Patient: age {r.get('age','?')}, gender {r.get('gender','?')}, "
+             f"admission type {r.get('admission_type','?')}, "
+             f"ICD codes {r.get('icd_codes','?')}. "
+             f"Similarity score: {round(r.get('rank_score', 0), 3)}.")
             for r in pat_results
         ]
     else:
@@ -192,24 +207,26 @@ def baseline_no_retrieval(query: str) -> dict:
 # ── BASELINE 4: Fixed-chunk Literature-only RAG ───────────────────────────
 def baseline_fixed_chunk_literature(query: str, k: int = 3) -> dict:
     """
-    Retrieves literature using fixed-size chunking (512 tokens, 10% overlap)
-    instead of the dynamic retrieval-guided chunking used in dual_source_rag.
-    This isolates the effect of chunking strategy on answer quality.
+    Retrieves literature using actual fixed-size chunking (512 words, 10% overlap)
+    from chunking_baselines.py, then scores against the top-k most relevant chunks.
 
-    Note: pmc_retriever already uses sentence embeddings over full passages.
-    Here we simulate fixed chunking by truncating each passage to 512 characters
-    (roughly 100 words) before passing to the LLM — matching Baseline A from
-    chunking_baselines.py in spirit.
+    This isolates the effect of chunking strategy on answer quality and uses the
+    real chunk_fixed() function — not character truncation.
     """
+    from chunking_baselines import chunk_fixed
+
     lit_results = retrieve_literature(query, k=k)
     if lit_results and isinstance(lit_results[0], dict):
         raw_passages = [r.get("passage", str(r)) for r in lit_results]
     else:
         raw_passages = [str(r) for r in lit_results]
 
-    # Simulate fixed-size chunking: truncate each passage to ~512 chars
-    FIXED_CHUNK_CHARS = 512
-    passages = [p[:FIXED_CHUNK_CHARS] for p in raw_passages]
+    # Apply real fixed-size chunking (512 words, 10% overlap) to each passage,
+    # then take the first chunk from each (most content-dense part)
+    passages = []
+    for p in raw_passages:
+        chunks = chunk_fixed(p, size=512, overlap=0.10)
+        passages.append(chunks[0] if chunks else p)
 
     lit_block = "\n".join(
         f"[LIT {i+1}] {p.strip()}" for i, p in enumerate(passages)

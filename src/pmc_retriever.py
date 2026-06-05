@@ -4,14 +4,16 @@ Week 6 – Farhana (M2)
 Retrieves top-k PMC literature passages for a given query.
 """
 
+import os
 import json
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
 # ── Config ───────────────────────────────────────────────────────────────────
-INDEX_PATH = "data/indexes/pmc_articles.index"
-TEXTS_PATH = "data/indexes/pmc_texts.json"
+_base      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+INDEX_PATH = os.path.join(_base, "data", "indexes", "pmc_articles.index")
+TEXTS_PATH = os.path.join(_base, "data", "indexes", "pmc_texts.json")
 MODEL_NAME = "pritamdeka/S-PubMedBert-MS-MARCO"
 # ─────────────────────────────────────────────────────────────────────────────
 

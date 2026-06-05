@@ -1,7 +1,8 @@
 import json
+import os
 from pathlib import Path
 
-RAW_DIR = Path("data/pubmedqa/raw")
+RAW_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) / "data" / "pubmedqa" / "raw"
 
 DATA_FILES = {
     "pqaa": RAW_DIR / "ori_pqaa.json",
@@ -12,7 +13,8 @@ DATA_FILES = {
 
 def load_pubmedqa_file(file_path: Path, split_name: str):
     if not file_path.exists():
-        raise FileNotFoundError(f"File not found: {file_path}")
+        print(f"[load_pubmedqa] Skipping {split_name} — file not found: {file_path}")
+        return []
 
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)

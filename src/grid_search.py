@@ -18,6 +18,7 @@ Usage:
 
 import json
 import os
+import re
 import sys
 import numpy as np
 
@@ -48,14 +49,9 @@ def compute_ece(confidences, corrects, n_bins=10):
     Parameters
     ----------
     confidences : list of float — predicted confidence for each question
-    corrects    : list of int   — 1 if answer was "yes", 0 if "no"
-                                  (we use PubMedQA gold label for this)
-    n_bins      : int           — number of bins to divide confidence into
-
-    Returns
-    -------
-    ece : float — lower is better (0.0 = perfectly calibrated)
-    bin_data : list of dicts — data for plotting reliability diagram
+    corrects    : list of int   — 1 if system answered correctly, 0 if not
+                                  (MUST be binary correctness, not gold label values)
+    n_bins      : int           — number of bins
     """
     confidences = np.array(confidences)
     corrects    = np.array(corrects, dtype=float)
@@ -67,8 +63,11 @@ def compute_ece(confidences, corrects, n_bins=10):
 
     for i in range(n_bins):
         lo, hi = bin_edges[i], bin_edges[i + 1]
-        # Find all samples whose confidence falls in this bin
-        in_bin = np.where((confidences >= lo) & (confidences < hi))[0]
+        # Use <= for the last bin so confidence=1.0 is not silently excluded
+        if i == n_bins - 1:
+            in_bin = np.where((confidences >= lo) & (confidences <= hi))[0]
+        else:
+            in_bin = np.where((confidences >= lo) & (confidences < hi))[0]
 
         if len(in_bin) == 0:
             bin_data.append({
@@ -84,8 +83,6 @@ def compute_ece(confidences, corrects, n_bins=10):
         avg_conf    = float(np.mean(confidences[in_bin]))
         avg_correct = float(np.mean(corrects[in_bin]))
         gap         = abs(avg_conf - avg_correct)
-
-        # ECE contribution: weighted by how many samples are in this bin
         ece += (len(in_bin) / n) * gap
 
         bin_data.append({
@@ -143,13 +140,17 @@ def load_val_questions():
 # ── Run grid search ────────────────────────────────────────────────────────
 def run_grid_search():
     from pipeline import Pipeline
+    from config import CONFIDENCE_WEIGHTS
 
     questions = load_val_questions()
     n = len(questions)
-    print(f"\n[grid_search] Will run {len(WEIGHT_COMBOS)} weight combos × {n} questions")
-    print("[grid_search] This will take a while — please be patient!\n")
+    print(f"\n[grid_search] Will run {len(WEIGHT_COMBOS)} weight combos x {n} questions")
+    print("[grid_search] Loading models ONCE (shared across all combos)...\n")
 
-    # We will store results per combo
+    # FIX Bug 9: Load the pipeline once with default weights.
+    # We will swap weights manually instead of creating a new Pipeline each time.
+    base_pipe = Pipeline(weights=WEIGHT_COMBOS[0])
+
     all_results = {}
 
     for combo, name in zip(WEIGHT_COMBOS, COMBO_NAMES):
@@ -157,90 +158,102 @@ def run_grid_search():
         print(f"Running combo: {name}  weights={combo}")
         print(f"{'='*60}")
 
-        # Create a fresh Pipeline with this weight combo
-        pipe = Pipeline(weights=combo)
+        # FIX Bug 9: Just swap the weights — no model reload
+        base_pipe.weights = combo
 
-        confidences = []
-        gold_labels = []
-        outputs     = []
+        confidences  = []
+        corrects     = []   # FIX Bug 3: binary correctness, not gold label value
+        outputs      = []
 
         for i, q in enumerate(questions):
             print(f"  [{i+1}/{n}] {q['question'][:70]}...")
             try:
-                result = pipe.run(q["question"])
+                result = base_pipe.run(q["question"])
+
+                # FIX Bug 3: determine correctness by comparing answer to gold label
+                answer_lower = result["answer"].strip().lower()
+                gold         = q["gold_label"]   # "yes", "no", or "maybe"
+
+                # Whole-word match to avoid substring false positives
+                # e.g. "no" must not match inside "not", "novel", "another"
+                is_correct = 1 if re.search(r'\b' + re.escape(gold) + r'\b', answer_lower) else 0
+
                 confidences.append(result["confidence"])
-                gold_labels.append(q["gold_numeric"])
+                corrects.append(is_correct)
+
                 outputs.append({
-                    "pmid":       q["pmid"],
-                    "question":   q["question"],
-                    "gold_label": q["gold_label"],
-                    "answer":     result["answer"],
-                    "confidence": result["confidence"],
-                    "s_al":       result["s_al"],
-                    "s_ap":       result["s_ap"],
-                    "a_lp":       result["a_lp"],
-                    "penalty":    result["penalty"]
+                    "pmid":        q["pmid"],
+                    "question":    q["question"],
+                    "gold_label":  gold,
+                    "answer":      result["answer"],
+                    "is_correct":  is_correct,
+                    "confidence":  result["confidence"],
+                    "s_al":        result["s_al"],
+                    "s_ap":        result["s_ap"],
+                    "a_lp":        result["a_lp"],
+                    "penalty":     result["penalty"]
                 })
             except Exception as e:
                 print(f"  [ERROR] Question {i+1} failed: {e}")
                 confidences.append(0.3)
-                gold_labels.append(q["gold_numeric"])
+                corrects.append(0)
                 outputs.append({
                     "pmid":       q["pmid"],
                     "question":   q["question"],
                     "gold_label": q["gold_label"],
                     "answer":     "ERROR",
+                    "is_correct": 0,
                     "confidence": 0.3,
                     "error":      str(e)
                 })
 
-        # Compute ECE for this combo
-        ece, bin_data = compute_ece(confidences, gold_labels)
-        avg_conf = round(float(np.mean(confidences)), 4)
-        penalties = sum(1 for o in outputs if o.get("penalty", False))
+        ece, bin_data  = compute_ece(confidences, corrects)
+        avg_conf       = round(float(np.mean(confidences)), 4)
+        accuracy       = round(float(np.mean(corrects)), 4)
+        penalties      = sum(1 for o in outputs if o.get("penalty", False))
 
-        print(f"\n  ✅ Combo: {name}")
-        print(f"     ECE         = {ece}  (lower is better)")
+        print(f"\n  Combo: {name}")
+        print(f"     ECE            = {ece}  (lower is better)")
+        print(f"     Accuracy       = {accuracy}")
         print(f"     Avg confidence = {avg_conf}")
-        print(f"     Penalties    = {penalties}/{n}")
+        print(f"     Penalties      = {penalties}/{n}")
 
         all_results[name] = {
-            "weights":      combo,
-            "ece":          ece,
-            "avg_conf":     avg_conf,
-            "penalties":    penalties,
-            "bin_data":     bin_data,
-            "outputs":      outputs
+            "weights":   combo,
+            "ece":       ece,
+            "accuracy":  accuracy,
+            "avg_conf":  avg_conf,
+            "penalties": penalties,
+            "bin_data":  bin_data,
+            "outputs":   outputs
         }
 
-    # ── Summary ──────────────────────────────────────────────────────────
+    # Summary
     print(f"\n\n{'='*60}")
     print("GRID SEARCH SUMMARY")
     print(f"{'='*60}")
-    print(f"{'Combo':<25} {'Weights':<30} {'ECE':>6} {'AvgConf':>9} {'Penalties':>10}")
-    print("-"*80)
+    print(f"{'Combo':<25} {'Weights':<30} {'ECE':>6} {'Accuracy':>9} {'AvgConf':>9}")
+    print("-"*85)
 
     best_name = None
     best_ece  = float("inf")
 
     for name, res in all_results.items():
-        w = res["weights"]
+        w     = res["weights"]
         w_str = f"({w[0]:.2f},{w[1]:.2f},{w[2]:.2f})"
-        print(f"{name:<25} {w_str:<30} {res['ece']:>6.4f} {res['avg_conf']:>9.4f} {res['penalties']:>10}")
+        print(f"{name:<25} {w_str:<30} {res['ece']:>6.4f} {res['accuracy']:>9.4f} {res['avg_conf']:>9.4f}")
         if res["ece"] < best_ece:
             best_ece  = res["ece"]
             best_name = name
 
-    print(f"\n🏆 Best combo: {best_name}  (ECE = {best_ece})")
-    print(f"   Best weights: {all_results[best_name]['weights']}")
+    print(f"\nBest combo: {best_name}  (ECE = {best_ece})")
 
-    # ── Save results ─────────────────────────────────────────────────────
-    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # ── Save full results JSON ─────────────────────────────────────────────
+    base    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     out_dir = os.path.join(base, "results", "grid_search")
     os.makedirs(out_dir, exist_ok=True)
 
-    out_path = os.path.join(out_dir, "grid_search_results.json")
-    # Convert tuple weights to lists for JSON serialisation
+    out_path  = os.path.join(out_dir, "grid_search_results.json")
     save_data = {}
     for name, res in all_results.items():
         save_data[name] = dict(res)
@@ -248,20 +261,44 @@ def run_grid_search():
 
     with open(out_path, "w") as f:
         json.dump(save_data, f, indent=2)
+    print(f"\n[grid_search] Full results saved to: {out_path}")
 
-    print(f"\n[grid_search] Results saved to: {out_path}")
-
-    # ── Save best weights separately for config.py ────────────────────────
+    # ── Save best_weights.json ─────────────────────────────────────────────
     best_weights = list(all_results[best_name]["weights"])
-    best_path = os.path.join(out_dir, "best_weights.json")
+    best_path    = os.path.join(out_dir, "best_weights.json")
     with open(best_path, "w") as f:
         json.dump({
             "best_combo_name": best_name,
             "best_weights":    best_weights,
             "best_ece":        best_ece
         }, f, indent=2)
-
     print(f"[grid_search] Best weights saved to: {best_path}")
+
+    # ── Save weight_tuning.csv (committed to GitHub as permanent record) ───
+    import csv
+    csv_path = os.path.join(base, "results", "weight_tuning.csv")
+    csv_rows = []
+    for name, res in all_results.items():
+        w = res["weights"]
+        csv_rows.append({
+            "combo_name":    name,
+            "alpha":         round(w[0], 4),
+            "beta":          round(w[1], 4),
+            "gamma":         round(w[2], 4),
+            "ece":           res["ece"],
+            "accuracy":      res.get("accuracy", ""),
+            "avg_confidence": res["avg_conf"],
+            "penalties":     res.get("penalties", ""),
+            "is_best":       "YES" if name == best_name else "no"
+        })
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=csv_rows[0].keys())
+        writer.writeheader()
+        writer.writerows(csv_rows)
+    print(f"[grid_search] weight_tuning.csv saved to: {csv_path}")
+    print(f"              (this file will be tracked by git)")
+
     return all_results, best_name
 
 

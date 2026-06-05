@@ -12,10 +12,18 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
 # ── Config ──────────────────────────────────────────────────────────────────
-PMC_DATA_PATH   = "data/pmc_literature/pmc_sample/"       # folder with your 500 PMC JSON files
-INDEX_SAVE_PATH = "data/indexes/pmc_articles.index"
-TEXTS_SAVE_PATH = "data/indexes/pmc_texts.json"   # we'll save raw texts too
+_base           = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PMC_DATA_PATH   = os.path.join(_base, "data", "pmc_literature", "pmc_sample")
+INDEX_SAVE_PATH = os.path.join(_base, "data", "indexes", "pmc_articles.index")
+TEXTS_SAVE_PATH = os.path.join(_base, "data", "indexes", "pmc_texts.json")
 MODEL_NAME      = "pritamdeka/S-PubMedBert-MS-MARCO"
+
+# Import pinned revision hash from config (GAP 10 fix)
+import sys as _sys
+import os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from config import MODEL_REVISIONS
+MODEL_REVISION  = MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"]
 BATCH_SIZE      = 32
 # ────────────────────────────────────────────────────────────────────────────
 
@@ -66,7 +74,7 @@ def embed_and_index(passages, model_name, batch_size):
     return index, embeddings
 
 def main():
-    os.makedirs("data/indexes", exist_ok=True)
+    os.makedirs(os.path.join(_base, "data", "indexes"), exist_ok=True)    
 
     articles = load_pmc_articles(PMC_DATA_PATH)
     passages = build_passage_texts(articles)

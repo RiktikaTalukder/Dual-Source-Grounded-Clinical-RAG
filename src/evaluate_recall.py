@@ -3,18 +3,54 @@ evaluate_recall.py
 Week 6 – Farhana (M2)
 Computes Recall@5 and Recall@10 on 50 PubMedQA questions.
 Saves results to /results/recall_baseline.csv
+
+Recall method: semantic similarity using BiomedBERT embeddings
+(same model as pmc_retriever.py — pritamdeka/S-PubMedBert-MS-MARCO).
+A retrieved passage counts as a hit if its cosine similarity to any
+gold context passage is >= 0.5.
+
+Note on cross-corpus overlap: the 50 questions sampled here use seed=42
+from the full 1000-question pool. The test split (test_ids.json) was also
+created with seed=42. There may be overlap between these 50 questions and
+the test set — this is a known limitation to note in thesis §5.
 """
 
 import json
 import csv
 import os
 import random
-from pmc_retriever import retrieve_literature   # our function from Step 5
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from pmc_retriever import retrieve_literature
 
-PUBMEDQA_PATH = "data/pubmedqa/raw/ori_pqal.json"  # adjust path if different
-RESULTS_PATH  = "results/recall_baseline.csv"
+_base         = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PUBMEDQA_PATH = os.path.join(_base, "data", "pubmedqa", "raw", "ori_pqal.json")
+RESULTS_PATH  = os.path.join(_base, "results", "recall_baseline.csv")
 NUM_QUESTIONS = 50
 RANDOM_SEED   = 42
+
+# Semantic similarity threshold: a retrieved passage is a hit if
+# cosine similarity to any gold context passage >= this value
+SIMILARITY_THRESHOLD = 0.5
+
+# Same model as pmc_retriever.py so the comparison is fair
+EMBED_MODEL_NAME = "pritamdeka/S-PubMedBert-MS-MARCO"
+
+# Load embedding model once
+print("Loading BiomedBERT for semantic recall evaluation...")
+_embed_model = SentenceTransformer(EMBED_MODEL_NAME)
+print("Model loaded.")
+
+
+def embed_texts(texts: list) -> np.ndarray:
+    """Embed a list of text strings, return normalised numpy array."""
+    return _embed_model.encode(
+        texts,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
+        show_progress_bar=False
+    )
+
 
 def load_pubmedqa_sample(path, n, seed):
     """Load n random questions from PubMedQA expert-labeled set."""
@@ -36,29 +72,51 @@ def load_pubmedqa_sample(path, n, seed):
         })
     return questions
 
-def compute_recall_at_k(retrieved_passages, gold_contexts, k):
-    """
-    Recall@k = fraction of gold context passages that appear in top-k retrieved.
-    We use a simple lexical overlap check (shared words).
-    """
-    retrieved_k = [r["passage"].lower() for r in retrieved_passages[:k]]
 
+def compute_recall_at_k(retrieved_passages: list, gold_contexts: list, k: int) -> float:
+    """
+    Semantic Recall@k.
+
+    A gold context passage counts as 'found' if any of the top-k retrieved
+    passages has cosine similarity >= SIMILARITY_THRESHOLD with it.
+
+    Uses BiomedBERT embeddings (same model as pmc_retriever.py) so that
+    the similarity measure is consistent with how retrieval itself works.
+
+    Parameters
+    ----------
+    retrieved_passages : list of dicts, each with key 'passage' (from retrieve_literature)
+    gold_contexts      : list of str — the ground-truth context passages from PubMedQA
+    k                  : int — how many retrieved passages to consider
+
+    Returns
+    -------
+    float — fraction of gold contexts that were semantically matched (0.0 to 1.0)
+    """
+    if not gold_contexts or not retrieved_passages:
+        return 0.0
+
+    # Get the top-k retrieved passage texts
+    retrieved_texts = [r["passage"] for r in retrieved_passages[:k]]
+
+    # Embed retrieved passages and gold contexts
+    retrieved_vecs = embed_texts(retrieved_texts)   # shape: (k, dim)
+    gold_vecs      = embed_texts(gold_contexts)     # shape: (n_gold, dim)
+
+    # Similarity matrix: (n_gold, k) — cosine sim for each gold-retrieved pair
+    sim_matrix = np.dot(gold_vecs, retrieved_vecs.T)
+
+    # A gold context is 'hit' if any retrieved passage exceeds the threshold
     hits = 0
-    for gold in gold_contexts:
-        gold_lower = gold.lower()
-        # Check if any retrieved passage overlaps significantly with this gold passage
-        gold_words = set(gold_lower.split())
-        for ret in retrieved_k:
-            ret_words = set(ret.split())
-            overlap   = len(gold_words & ret_words) / max(len(gold_words), 1)
-            if overlap > 0.3:   # 30% word overlap threshold
-                hits += 1
-                break
+    for gold_idx in range(len(gold_contexts)):
+        if np.any(sim_matrix[gold_idx] >= SIMILARITY_THRESHOLD):
+            hits += 1
 
-    return hits / max(len(gold_contexts), 1)
+    return hits / len(gold_contexts)
+
 
 def main():
-    os.makedirs("results", exist_ok=True)
+    os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
 
     print(f"Loading {NUM_QUESTIONS} PubMedQA questions...")
     questions = load_pubmedqa_sample(PUBMEDQA_PATH, NUM_QUESTIONS, RANDOM_SEED)
@@ -93,6 +151,7 @@ def main():
     print(f"\n{'='*50}")
     print(f"  Average Recall@5  : {avg_r5:.4f}")
     print(f"  Average Recall@10 : {avg_r10:.4f}")
+    print(f"  Method            : semantic (BiomedBERT cosine >= {SIMILARITY_THRESHOLD})")
     print(f"{'='*50}")
 
     # Save to CSV
@@ -100,7 +159,6 @@ def main():
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
-        # Add summary row
         writer.writerow({
             "question_id": "AVERAGE",
             "question":    "",
@@ -110,6 +168,7 @@ def main():
         })
 
     print(f"\nResults saved to {RESULTS_PATH}")
+
 
 if __name__ == "__main__":
     main()

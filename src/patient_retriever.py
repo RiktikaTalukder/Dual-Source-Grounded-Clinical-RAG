@@ -1,7 +1,12 @@
 """
 patient_retriever.py
-Retrieves top-K similar historical patient cases given a query note.
-Similarity = 0.6 × ClinicalBERT cosine sim + 0.4 × ICD Jaccard overlap
+Week 14 — Phase B Core Fixes
+
+Changes from previous version:
+- Embedding model: ClinicalBERT → S-PubMedBert-MS-MARCO (unified model)
+- jaccard(): ICD codes normalized to first 3 chars before comparison
+- build_patient_index(): embeds bhc field instead of raw note first 1000 chars
+- ICD sets: asserted to contain only strings, never integers
 """
 
 import os
@@ -11,28 +16,44 @@ import pandas as pd
 import faiss
 from sentence_transformers import SentenceTransformer
 
-# ── Config ──────────────────────────────────────────────────────────────
-_base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_NAME    = "medicalai/ClinicalBERT"
-INDEX_PATH = os.path.join(_base, "data", "indexes", "mimic_patients.index")
-import os
-_base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-METADATA_PATH = os.path.join(_base, "data", "patient_metadata.csv") if os.path.exists(os.path.join(_base, "data", "patient_metadata.csv")) else os.path.join(_base, "data", "mimic", "processed", "patient_metadata.csv")
-NOTES_DIR     = "data/mimic/mimic_sample"
+# ── Config ───────────────────────────────────────────────────────────────────
+_base         = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_base, "src"))
+from config import MODEL_REVISIONS
+
+MODEL_NAME    = "pritamdeka/S-PubMedBert-MS-MARCO"
+INDEX_PATH    = os.path.join(_base, "data", "indexes", "mimic_patients.index")
+METADATA_PATH = os.path.join(_base, "data", "mimic", "processed", "patient_metadata.csv")
+NOTES_DIR     = os.path.join(_base, "data", "mimic", "mimic_sample")
 ALPHA         = 0.6   # weight for embedding similarity
 BETA          = 0.4   # weight for ICD Jaccard overlap
 TOP_K         = 3
-# ────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def normalize_icd(code: str) -> str:
+    """Normalize ICD-10 code to first 3 characters (category level)."""
+    return str(code).strip()[:3]
+
 
 def load_resources():
-    print("Loading ClinicalBERT model...")
+    print(f"Loading model: {MODEL_NAME}")
     model = SentenceTransformer(MODEL_NAME)
 
     print("Loading patient metadata...")
-    meta = pd.read_csv(METADATA_PATH)
-    meta["icd_set"] = meta["icd_codes_top5"].fillna("").apply(
-        lambda x: set(str(x).split(",")) - {""}
-    )
+    STRATIFIED_PATH = os.path.join(_base, "data", "mimic", "processed", "patient_metadata_stratified.csv")
+    meta_path = STRATIFIED_PATH if os.path.exists(STRATIFIED_PATH) else METADATA_PATH
+    meta = pd.read_csv(meta_path, dtype=str)
+
+    # Build normalized ICD sets (3-char prefixes, strings only)
+    def parse_icd_set(raw):
+        codes = set(str(raw).split(",")) - {"", "nan"}
+        normalized = {normalize_icd(c) for c in codes}
+        assert all(isinstance(c, str) for c in normalized), \
+            "ICD set contains non-string values!"
+        return normalized
+
+    meta["icd_set"] = meta["icd_codes_top5"].fillna("").apply(parse_icd_set)
 
     print("Loading FAISS index...")
     index = faiss.read_index(INDEX_PATH)
@@ -42,17 +63,35 @@ def load_resources():
 
 
 def jaccard(set_a: set, set_b: set) -> float:
-    if not set_a or not set_b:
+    """
+    Jaccard similarity between two ICD code sets.
+    Both sets must contain only strings normalized to 3-char prefixes.
+    """
+    assert all(isinstance(c, str) for c in set_a), "set_a contains non-strings"
+    assert all(isinstance(c, str) for c in set_b), "set_b contains non-strings"
+
+    # Normalize both sets to 3-char prefixes
+    a = {normalize_icd(c) for c in set_a}
+    b = {normalize_icd(c) for c in set_b}
+
+    if not a or not b:
         return 0.0
-    return len(set_a & set_b) / len(set_a | set_b)
+    return len(a & b) / len(a | b)
 
 
 def retrieve(query_text: str, query_icd: set,
              model, meta, index, top_k: int = TOP_K):
-    # 1. Embed query
-    q_vec = model.encode([query_text], normalize_embeddings=True).astype("float32")
+    """Retrieve top-k similar patients given query text and ICD hints."""
 
-    # 2. FAISS cosine search (index stores L2-normalised vectors)
+    # Normalize query ICD codes to 3-char prefixes
+    query_icd_norm = {normalize_icd(c) for c in query_icd}
+
+    # Embed query
+    q_vec = model.encode(
+        [query_text], normalize_embeddings=True
+    ).astype("float32")
+
+    # FAISS cosine search
     search_k = min(top_k * 5, index.ntotal)
     distances, indices = index.search(q_vec, search_k)
 
@@ -60,19 +99,22 @@ def retrieve(query_text: str, query_icd: set,
     for dist, idx in zip(distances[0], indices[0]):
         if idx < 0 or idx >= len(meta):
             continue
-        row = meta.iloc[idx]
-        cos_sim  = float(dist)                        # already normalised → dot = cosine
-        icd_sim  = jaccard(query_icd, row["icd_set"])
+        row      = meta.iloc[idx]
+        cos_sim  = float(dist)
+        icd_sim  = jaccard(query_icd_norm, row["icd_set"])
         combined = ALPHA * cos_sim + BETA * icd_sim
         results.append({
-            "rank_score"     : combined,
-            "cos_sim"        : cos_sim,
-            "icd_jaccard"    : icd_sim,
-            "subject_id"     : row["subject_id"],
-            "age"            : row["age"],
-            "gender"         : row["gender"],
-            "admission_type" : row["admission_type"],
-            "icd_codes"      : row["icd_codes_top5"],
+            "rank_score"      : combined,
+            "cos_sim"         : cos_sim,
+            "icd_jaccard"     : icd_sim,
+            "subject_id"      : row["subject_id"],
+            "hadm_id"         : row["hadm_id"],
+            "age"             : row["age"],
+            "gender"          : row["gender"],
+            "admission_type"  : row["admission_type"],
+            "icd_codes"       : row["icd_codes_top5"],
+            "discharge_location": row.get("discharge_location", ""),
+            "bhc_preview"     : str(row.get("bhc", "") or "")[:200],
         })
 
     results.sort(key=lambda x: x["rank_score"], reverse=True)
@@ -80,78 +122,163 @@ def retrieve(query_text: str, query_icd: set,
 
 
 def build_patient_index(model, meta):
-    """Embed one representative note per patient and save FAISS index."""
-    print("Building patient FAISS index from mimic_sample notes...")
+    """
+    Embed one representative text per patient and save FAISS index.
+    Priority: bhc field (Brief Hospital Course, up to 800 chars)
+    Fallback: first 500 chars of raw .txt note file
+    Final fallback: demographic string
+    """
+    print("Building patient FAISS index...")
     texts = []
-    valid_indices = []
+    used_bhc      = 0
+    used_note     = 0
+    used_fallback = 0
+
+    note_files = sorted([
+        f for f in os.listdir(NOTES_DIR)
+        if f.endswith(".txt")
+    ])
+    note_map = {f: os.path.join(NOTES_DIR, f) for f in note_files}
 
     for i, row in meta.iterrows():
-        # Try to find a note file for this subject
-        note_files = [f for f in os.listdir(NOTES_DIR)
-                      if f.endswith(".txt") and not f.endswith("_meta.json")]
-        if i < len(note_files):
-            note_path = os.path.join(NOTES_DIR, sorted(note_files)[i])
-            with open(note_path, "r", encoding="utf-8") as f:
-                texts.append(f.read()[:1000])   # first 1000 chars as representative
-            valid_indices.append(i)
-        else:
-            texts.append(f"Patient age {row['age']} gender {row['gender']} "
-                         f"admission {row['admission_type']} ICD {row['icd_codes_top5']}")
-            valid_indices.append(i)
+        bhc = str(row.get("bhc", "")).strip()
 
-    print(f"Embedding {len(texts)} patient records...")
-    embeddings = model.encode(texts, normalize_embeddings=True,
-                              batch_size=32, show_progress_bar=True)
-    embeddings = embeddings.astype("float32")
+        if bhc and bhc != "nan":
+            # Primary: use BHC field
+            texts.append(bhc)
+            used_bhc += 1
+        else:
+            # Fallback 1: try to find a note file for this subject
+            subject_id = str(row["subject_id"]).strip()
+            matched = [f for f in note_files if subject_id in f]
+            if matched:
+                note_path = note_map[matched[0]]
+                with open(note_path, "r", encoding="utf-8") as f:
+                    texts.append(f.read()[:500])
+                used_note += 1
+            else:
+                # Fallback 2: demographic string
+                texts.append(
+                    f"Patient age {row.get('age','')} "
+                    f"gender {row.get('gender','')} "
+                    f"admission {row.get('admission_type','')} "
+                    f"ICD {row.get('icd_codes_top5','')}"
+                )
+                used_fallback += 1
+
+    print(f"  Embedding sources:")
+    print(f"    BHC field      : {used_bhc}")
+    print(f"    Note file      : {used_note}")
+    print(f"    Demographic str: {used_fallback}")
+    print(f"  Total            : {len(texts)}")
+
+    print(f"\nEmbedding {len(texts)} patient records...")
+    embeddings = model.encode(
+        texts,
+        normalize_embeddings=True,
+        batch_size=32,
+        show_progress_bar=True
+    ).astype("float32")
 
     dim   = embeddings.shape[1]
-    index = faiss.IndexFlatIP(dim)    # Inner Product = cosine on normalised vecs
+    index = faiss.IndexFlatIP(dim)
     index.add(embeddings)
 
-    os.makedirs("data/indexes", exist_ok=True)
+    os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
     faiss.write_index(index, INDEX_PATH)
-    print(f"✅ Patient index saved → {INDEX_PATH}  ({index.ntotal} vectors)")
+    print(f"✅ Patient index saved → {INDEX_PATH} ({index.ntotal} vectors)")
     return index
 
 
-# ── Main demo ────────────────────────────────────────────────────────────
+# ── Main ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
 
-    # Build index if it doesn't exist yet
-    if not os.path.exists(INDEX_PATH):
-        print("Index not found — building it now...")
-        tmp_model = SentenceTransformer(MODEL_NAME)
-        tmp_meta  = pd.read_csv(METADATA_PATH)
-        tmp_meta["icd_set"] = tmp_meta["icd_codes_top5"].fillna("").apply(
-            lambda x: set(str(x).split(",")) - {""}
-        )
-        build_patient_index(tmp_model, tmp_meta)
+    print("Rebuilding mimic_patients.index with S-PubMedBert + BHC embeddings...")
+    tmp_model = SentenceTransformer(MODEL_NAME)
 
-    model, meta, index = load_resources()
+    # Load ONLY patients whose notes exist in mimic_sample/
+    # This gives us the ~637 stratified corpus patients, not all 431,231
+    note_files = [f for f in os.listdir(NOTES_DIR) if f.endswith(".txt")]
+    note_hadm_ids = set()
+    for fname in note_files:
+        # filename format: note_{note_id}.txt
+        # we need to map note_id → hadm_id via discharge.csv
+        pass
 
-    # 5 sample queries
-    sample_queries = [
-        ("Patient admitted with severe sepsis and multi-organ failure, requiring ICU care.",
-         {"99591", "99592", "99811"}),
-        ("Elderly patient with acute heart failure and fluid overload.",
-         {"42831", "40291", "5849"}),
-        ("Patient with COPD exacerbation and respiratory failure needing ventilator support.",
-         {"49121", "51881", "9670"}),
-        ("Type 2 diabetes patient with hyperglycaemic crisis and ketoacidosis.",
-         {"25010", "25001", "2762"}),
-        ("Post-operative patient with wound infection and fever after abdominal surgery.",
-         {"9985", "5990", "78650"}),
+    # Simpler: load full metadata but filter to rows that have bhc content
+    # (bhc was only populated for our 637 stratified notes)
+    tmp_meta = pd.read_csv(METADATA_PATH, dtype=str)
+    tmp_meta["icd_set"] = tmp_meta["icd_codes_top5"].fillna("").apply(
+        lambda x: {normalize_icd(c)
+                   for c in (set(str(x).split(",")) - {"", "nan"})}
+    )
+
+    # Filter to only patients with BHC content OR a matching note file
+    has_bhc = tmp_meta["bhc"].fillna("").str.strip().str.len() > 0
+
+    # Also find hadm_ids from note filenames via discharge mapping
+    import pandas as _pd
+    discharge_path = os.path.join(_base, "data", "mimic", "processed", "discharge.csv")
+    discharge_map = _pd.read_csv(
+        discharge_path, dtype=str, low_memory=False,
+        usecols=["note_id", "hadm_id"]
+    )
+    note_ids_in_sample = [
+        f.replace("note_", "").replace(".txt", "")
+        for f in note_files
+    ]
+    hadm_ids_in_sample = set(
+        discharge_map[discharge_map["note_id"].isin(note_ids_in_sample)]["hadm_id"]
+    )
+
+    has_note = tmp_meta["hadm_id"].isin(hadm_ids_in_sample)
+    tmp_meta_filtered = tmp_meta[has_bhc | has_note].reset_index(drop=True)
+    print(f"Filtered to {len(tmp_meta_filtered)} patients with notes/BHC content")
+
+    build_patient_index(tmp_model, tmp_meta_filtered)
+
+    # Save filtered metadata for retrieval use
+    FILTERED_META_PATH = os.path.join(
+        _base, "data", "mimic", "processed", "patient_metadata_stratified.csv"
+    )
+    tmp_meta_filtered.to_csv(FILTERED_META_PATH, index=False)
+    print(f"✅ Filtered metadata saved → {FILTERED_META_PATH}")
+    print()
+
+    # Load and run 5 test queries using filtered metadata
+    print("Loading resources for test queries...")
+    model = SentenceTransformer(MODEL_NAME)
+    meta  = pd.read_csv(FILTERED_META_PATH, dtype=str)
+    meta["icd_set"] = meta["icd_codes_top5"].fillna("").apply(
+        lambda x: {normalize_icd(c)
+                   for c in (set(str(x).split(",")) - {"", "nan"})}
+    )
+    index = faiss.read_index(INDEX_PATH)
+
+    test_queries = [
+        ("Patient with type 2 diabetes and hyperglycaemia requiring insulin.",
+         {"E11"}),
+        ("Elderly patient with acute myocardial infarction and chest pain.",
+         {"I21", "I50"}),
+        ("Patient with COPD exacerbation and respiratory failure.",
+         {"J44", "J96"}),
+        ("Patient admitted with pneumonia and sepsis requiring ICU care.",
+         {"J18", "A41"}),
+        ("Patient with chronic kidney disease and fluid overload.",
+         {"N18", "N19"}),
     ]
 
-    for i, (query_text, query_icd) in enumerate(sample_queries, 1):
+    for i, (query_text, query_icd) in enumerate(test_queries, 1):
         print(f"\n{'='*60}")
         print(f"QUERY {i}: {query_text}")
-        print(f"Query ICD codes: {query_icd}")
+        print(f"Query ICD hints: {query_icd}")
         print(f"{'='*60}")
         results = retrieve(query_text, query_icd, model, meta, index)
         for rank, r in enumerate(results, 1):
-            print(f"\n  Rank {rank} | Combined Score: {r['rank_score']:.4f} "
-                  f"(cos={r['cos_sim']:.4f}, icd_jacc={r['icd_jaccard']:.4f})")
+            print(f"\n  Rank {rank} | Score: {r['rank_score']:.4f} "
+                  f"(cos={r['cos_sim']:.4f}, icd={r['icd_jaccard']:.4f})")
             print(f"  Subject: {r['subject_id']} | Age: {r['age']} | "
-                  f"Gender: {r['gender']} | Admission: {r['admission_type']}")
+                  f"Gender: {r['gender']}")
             print(f"  ICD codes: {r['icd_codes']}")
+            print(f"  Discharge: {r['discharge_location']}")
+            print(f"  BHC: {r['bhc_preview']}...")
