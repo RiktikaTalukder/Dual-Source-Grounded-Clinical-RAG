@@ -109,3 +109,33 @@ evaluate.py must implement: three-class accuracy, macro-F1,
 BERTScore (deberta judge), Recall@5/10 (all-mpnet judge),
 ECE (three-class, no 0.5 for maybe), McNemar+Cohen's h,
 abstain rate metric, reliability diagram.
+
+---
+
+## Additional observation: dual_source confidence consistently lower than baselines
+
+In the smoke test, dual_source confidence was ~0.35 across all 5 queries
+while all baselines scored ~0.60. This pattern is consistent — not a
+one-off result.
+
+This is expected behaviour by design: dual_source confidence is harder
+to earn because A(L,P) (cross-source agreement) has the largest weight
+(gamma=0.4) and tends to be low when the retrieved literature and patient
+cases don't discuss the same clinical angle.
+
+However — if this pattern holds consistently across the full 800-question
+experiment, it raises a calibration question: does lower confidence in
+dual_source actually predict lower accuracy? Or is dual_source equally
+accurate but just systematically under-confident?
+
+This should be examined explicitly in Week 21 when full results are
+available. Specifically:
+- Compare dual_source accuracy vs baseline accuracy
+- Compare ECE across all 5 methods (evaluate.py, Week 19)
+- If dual_source has lower ECE than baselines despite lower raw
+  confidence, the calibration argument holds and is a thesis strength
+- If dual_source has higher ECE, this needs to be addressed as a
+  limitation in thesis Section 5
+
+Riktika (Week 19): keep this in mind when verifying evaluate.py
+output on the 20-question pilot.
