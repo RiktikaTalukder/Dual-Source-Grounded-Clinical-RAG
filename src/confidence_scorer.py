@@ -1,88 +1,112 @@
 """
 confidence_scorer.py
-Week 8 — Farhana (M2)
+Week 15 — Farhana (M2)
+
 Computes a confidence score for a generated answer given
-literature passages and patient case passages.
+literature passages and patient chunk strings.
 
 Formula:
     S(AL)      = cosine similarity: answer vs literature passages
-    S(AP)      = cosine similarity: answer vs patient case passages
-    A(L,P)     = NLI entailment score: literature vs patient evidence
+    S(AP)      = cosine similarity: answer vs patient chunk strings
+    A(L,P)     = NLI entailment score: top-1 literature vs top-1 patient chunk
+                 IMPORTANT: A(L,P) takes NO answer argument.
+                 It measures agreement between the two sources only.
+                 This makes it structurally independent of S(AL) and S(AP).
     Confidence = alpha*S(AL) + beta*S(AP) + gamma*A(L,P)
     where (alpha, beta, gamma) = CONFIDENCE_WEIGHTS from config.py
-    Default best weights: (0.3, 0.3, 0.4) — found by Week 11 grid search
-    If A(L,P) < PENALTY_THRESHOLD: apply disagreement penalty → multiply by PENALTY_MULTIPLIER
+
+Availability flags (GAP 3 fix):
+    lit_available  — False if no literature was retrieved
+    pat_available  — False if no patient evidence was retrieved
+    Flags are checked FIRST, before any encoder call.
+    Missing source → its score and any joint score set to NEUTRAL_SCORE (0.5).
+    Both missing   → return all 0.5 immediately, no encoder called.
 """
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from transformers import pipeline
-from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER
+from transformers import pipeline as hf_pipeline
+from config import (
+    CONFIDENCE_WEIGHTS,
+    PENALTY_THRESHOLD,
+    PENALTY_MULTIPLIER,
+    NEUTRAL_SCORE,
+    MODEL_REVISIONS,
+)
 
-# ── Load models once at module level ──────────────────────────────────────
-print("Loading SentenceTransformer (ClinicalBERT)...")
-_embedder = SentenceTransformer("medicalai/ClinicalBERT")
+# ── Load models once at module level ─────────────────────────────────────────
+print("Loading SentenceTransformer (S-PubMedBert-MS-MARCO)...")
+_embedder = SentenceTransformer(
+    "pritamdeka/S-PubMedBert-MS-MARCO",
+    revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"],
+)
 
 print("Loading NLI model (bart-large-mnli)...")
-_nli = pipeline(
+_nli = hf_pipeline(
     "text-classification",
     model="facebook/bart-large-mnli",
-    device=-1        # -1 = CPU. Change to 0 if you have a GPU.
+    revision=MODEL_REVISIONS["facebook/bart-large-mnli"],
+    device=-1,   # -1 = CPU. Change to 0 if you have a GPU.
 )
-print("Models loaded!")
+print("Models loaded.")
 
-# ── Helper: embed a piece of text ─────────────────────────────────────────
+
+# ── Helper: embed a single text ───────────────────────────────────────────────
 def _embed(text: str) -> np.ndarray:
-    """Return a normalized embedding vector for a single text string."""
+    """Return a normalised embedding vector for a single text string."""
     vec = _embedder.encode([text], normalize_embeddings=True)
-    return vec[0]   # shape: (embedding_dim,)
+    return vec[0]
 
-# ── Helper: mean embedding of a list of texts ─────────────────────────────
+
+# ── Helper: mean embedding of a list of texts ─────────────────────────────────
 def _mean_embed(texts: list) -> np.ndarray:
-    """
-    Embed each passage in the list, then return their average vector.
-    This represents the 'overall meaning' of a set of passages.
-    """
+    """Embed each passage and return their average vector."""
     vecs = _embedder.encode(texts, normalize_embeddings=True)
-    return np.mean(vecs, axis=0)   # shape: (embedding_dim,)
+    return np.mean(vecs, axis=0)
 
-# ── S(AL): answer vs literature similarity ────────────────────────────────
+
+# ── S(AL): answer vs literature similarity ────────────────────────────────────
 def score_answer_literature(answer: str, literature_passages: list) -> float:
     """
     Cosine similarity between the answer embedding and the
     mean embedding of all literature passages.
-    Range: 0.0 (no match) to 1.0 (perfect match)
+    Range: 0.0 to 1.0
     """
     answer_vec = _embed(answer)
     lit_vec    = _mean_embed(literature_passages)
-    score      = float(np.dot(answer_vec, lit_vec))
-    return round(score, 4)
+    return round(float(np.dot(answer_vec, lit_vec)), 4)
 
-# ── S(AP): answer vs patient cases similarity ─────────────────────────────
-def score_answer_patient(answer: str, patient_passages: list) -> float:
+
+# ── S(AP): answer vs patient chunks similarity ────────────────────────────────
+def score_answer_patient(answer: str, patient_chunks: list) -> float:
     """
     Cosine similarity between the answer embedding and the
-    mean embedding of all patient case passages.
-    Range: 0.0 (no match) to 1.0 (perfect match)
+    mean embedding of all patient chunk strings.
+    Range: 0.0 to 1.0
     """
-    answer_vec     = _embed(answer)
-    patient_vec    = _mean_embed(patient_passages)
-    score          = float(np.dot(answer_vec, patient_vec))
-    return round(score, 4)
+    answer_vec  = _embed(answer)
+    patient_vec = _mean_embed(patient_chunks)
+    return round(float(np.dot(answer_vec, patient_vec)), 4)
 
-# ── A(L,P): literature vs patient agreement (NLI) ────────────────────
-def score_alignment(literature_passages: list, patient_passages: list) -> float:
+
+# ── A(L,P): literature vs patient agreement — NLI, NO answer involved ─────────
+def score_alignment(literature_passages: list, patient_chunks: list) -> float:
     """
-    Uses NLI to check whether literature ENTAILS (agrees with) patient evidence.
+    Computes NLI entailment between the top-1 literature passage (premise)
+    and the top-1 patient chunk string (hypothesis).
 
-    Correct approach: pass literature as premise and patient evidence as
-    hypothesis to the text-classification pipeline using text_pair,
-    which performs true NLI between two texts.
+    CRITICAL DESIGN NOTE:
+    This function takes NO answer argument. The only inputs are the two
+    retrieved source lists. This makes A(L,P) structurally independent of
+    S(AL) and S(AP) — it measures source agreement, not answer grounding.
+
+    Premise   : top-1 literature passage, truncated to 500 characters
+    Hypothesis: top-1 patient chunk string, truncated to 350 characters
 
     Range: 0.0 (contradiction/neutral) to 1.0 (full entailment)
     """
-    premise    = " ".join(literature_passages)[:600]
-    hypothesis = " ".join(patient_passages)[:350]
+    premise    = literature_passages[0][:500]
+    hypothesis = patient_chunks[0][:350]
 
     result = _nli(
         premise,
@@ -90,45 +114,91 @@ def score_alignment(literature_passages: list, patient_passages: list) -> float:
         top_k=None,
     )
 
-    # result is a list of dicts: [{'label': 'ENTAILMENT', 'score': 0.xx}, ...]
-    # label names vary by model — bart-large-mnli uses ENTAILMENT/CONTRADICTION/NEUTRAL
-    label_map = {lab["label"].upper(): lab["score"] for lab in result}
+    # bart-large-mnli label names: ENTAILMENT / CONTRADICTION / NEUTRAL
+    label_map = {item["label"].upper(): item["score"] for item in result}
     entailment_score = label_map.get("ENTAILMENT", 0.0)
     return round(float(entailment_score), 4)
 
-# ── Main function: compute full confidence score ───────────────────────────
+
+# ── Main function: compute full confidence score ──────────────────────────────
 def compute_confidence(
     answer: str,
     literature_passages: list,
-    patient_passages: list
+    patient_chunks: list,
+    lit_available: bool = True,
+    pat_available: bool = True,
 ) -> dict:
     """
     Compute the full confidence score for a generated answer.
 
     Parameters
     ----------
-    answer               : str   — the answer your RAG system generated
-    literature_passages  : list  — list of retrieved PMC passage strings
-    patient_passages     : list  — list of retrieved MIMIC passage strings
+    answer              : str   — the answer the RAG system generated
+    literature_passages : list  — retrieved PMC passage strings
+    patient_chunks      : list  — retrieved MIMIC patient chunk strings
+    lit_available       : bool  — False if no literature was retrieved
+    pat_available       : bool  — False if no patient evidence was retrieved
+
+    IMPORTANT: availability flags are checked FIRST, before any encoder call.
+    If a source is unavailable, its score and any joint score are set to
+    NEUTRAL_SCORE (0.5) without calling the embedding model or NLI model.
 
     Returns
     -------
-    dict with keys:
-        s_al        — answer vs literature score
-        s_ap        — answer vs patient score
-        a_lp        — literature vs patient agreement score
-        confidence  — final weighted confidence score
-        penalty     — True if disagreement penalty was applied
+    dict with keys: s_al, s_ap, a_lp, confidence, penalty
     """
-    s_al = score_answer_literature(answer, literature_passages)
-    s_ap = score_answer_patient(answer, patient_passages)
-    a_lp = score_alignment(literature_passages, patient_passages)
 
-    # Equal-weight combination
+    # ── GAP 3 FIX: check flags FIRST, before any encoder call ────────────────
+    if not lit_available and not pat_available:
+        # No retrieval at all — return all neutral, no encoder called
+        return {
+            "s_al":       NEUTRAL_SCORE,
+            "s_ap":       NEUTRAL_SCORE,
+            "a_lp":       NEUTRAL_SCORE,
+            "confidence": NEUTRAL_SCORE,
+            "penalty":    False,
+        }
+
+    if not lit_available:
+        # Only patient evidence available
+        s_al = NEUTRAL_SCORE
+        a_lp = NEUTRAL_SCORE
+        s_ap = score_answer_patient(answer, patient_chunks)
+        alpha, beta, gamma = CONFIDENCE_WEIGHTS
+        raw_confidence = alpha * s_al + beta * s_ap + gamma * a_lp
+        penalty_applied = False   # cannot compute disagreement without both sources
+        return {
+            "s_al":       s_al,
+            "s_ap":       round(s_ap, 4),
+            "a_lp":       a_lp,
+            "confidence": round(raw_confidence, 4),
+            "penalty":    penalty_applied,
+        }
+
+    if not pat_available:
+        # Only literature available
+        s_ap = NEUTRAL_SCORE
+        a_lp = NEUTRAL_SCORE
+        s_al = score_answer_literature(answer, literature_passages)
+        alpha, beta, gamma = CONFIDENCE_WEIGHTS
+        raw_confidence = alpha * s_al + beta * s_ap + gamma * a_lp
+        penalty_applied = False   # cannot compute disagreement without both sources
+        return {
+            "s_al":       round(s_al, 4),
+            "s_ap":       s_ap,
+            "a_lp":       a_lp,
+            "confidence": round(raw_confidence, 4),
+            "penalty":    penalty_applied,
+        }
+
+    # ── Both sources available: compute all three components ──────────────────
+    s_al = score_answer_literature(answer, literature_passages)
+    s_ap = score_answer_patient(answer, patient_chunks)
+    a_lp = score_alignment(literature_passages, patient_chunks)
+
     alpha, beta, gamma = CONFIDENCE_WEIGHTS
     raw_confidence = alpha * s_al + beta * s_ap + gamma * a_lp
 
-    # Disagreement penalty
     penalty_applied = a_lp < PENALTY_THRESHOLD
     if penalty_applied:
         raw_confidence *= PENALTY_MULTIPLIER
@@ -138,138 +208,64 @@ def compute_confidence(
         "s_ap":       s_ap,
         "a_lp":       a_lp,
         "confidence": round(raw_confidence, 4),
-        "penalty":    penalty_applied
+        "penalty":    penalty_applied,
     }
 
-# ── Test on 10 dummy triples ───────────────────────────────────────────────
+
+# ── Test: 4 scenarios required by workplan ────────────────────────────────────
 if __name__ == "__main__":
 
-    test_cases = [
-        {
-            "answer": "Aspirin is recommended for patients with acute MI to reduce mortality.",
-            "literature": [
-                "Aspirin therapy reduces mortality in acute myocardial infarction patients.",
-                "Antiplatelet agents including aspirin are standard treatment for MI."
-            ],
-            "patient": [
-                "Patient was given aspirin 325mg on admission for chest pain.",
-                "History of MI, currently on aspirin therapy."
-            ]
-        },
-        {
-            "answer": "Insulin is the first-line treatment for type 2 diabetes.",
-            "literature": [
-                "Metformin is the recommended first-line drug for type 2 diabetes.",
-                "Lifestyle modification and metformin are initial treatments for T2DM."
-            ],
-            "patient": [
-                "Patient diagnosed with type 2 diabetes, started on metformin.",
-                "Blood glucose controlled with oral hypoglycaemics, not insulin."
-            ]
-        },
-        {
-            "answer": "Hypertension increases the risk of stroke and heart disease.",
-            "literature": [
-                "Elevated blood pressure is a major risk factor for cardiovascular events.",
-                "Hypertension is strongly associated with stroke incidence."
-            ],
-            "patient": [
-                "Patient has long-standing hypertension and presented with TIA.",
-                "BP 160/95 on admission, history of hypertension."
-            ]
-        },
-        {
-            "answer": "Sepsis is treated with broad-spectrum antibiotics and fluid resuscitation.",
-            "literature": [
-                "Early antibiotic therapy and IV fluids are cornerstones of sepsis management.",
-                "Broad-spectrum antibiotics should be given within one hour of sepsis diagnosis."
-            ],
-            "patient": [
-                "Patient admitted with sepsis, started on piperacillin-tazobactam and IV fluids.",
-                "Blood cultures drawn, empirical antibiotics commenced."
-            ]
-        },
-        {
-            "answer": "Beta-blockers are contraindicated in asthma patients.",
-            "literature": [
-                "Non-selective beta-blockers can cause bronchospasm in asthmatic patients.",
-                "Beta-blockers should be used with caution or avoided in asthma."
-            ],
-            "patient": [
-                "Patient with asthma — beta-blocker avoided, switched to calcium channel blocker.",
-                "Known asthmatic, no beta-blocker prescribed."
-            ]
-        },
-        {
-            "answer": "Warfarin is used to prevent blood clots in atrial fibrillation.",
-            "literature": [
-                "Anticoagulation with warfarin reduces stroke risk in atrial fibrillation.",
-                "Warfarin is effective for thromboembolic prevention in AF patients."
-            ],
-            "patient": [
-                "Patient with AF, prescribed warfarin 5mg daily.",
-                "INR monitored weekly, warfarin dose adjusted."
-            ]
-        },
-        {
-            "answer": "Kidney failure patients should avoid NSAIDs.",
-            "literature": [
-                "NSAIDs can worsen renal function and are contraindicated in CKD.",
-                "Renal impairment is a known adverse effect of NSAID use."
-            ],
-            "patient": [
-                "Patient with CKD stage 3, NSAIDs discontinued on admission.",
-                "Renal function monitoring — ibuprofen stopped."
-            ]
-        },
-        {
-            "answer": "Oxygen therapy is given to all patients with pneumonia.",
-            "literature": [
-                "Supplemental oxygen is indicated when SpO2 drops below 94% in pneumonia.",
-                "Not all pneumonia patients require oxygen; it depends on saturation levels."
-            ],
-            "patient": [
-                "Patient SpO2 91%, started on 2L nasal cannula oxygen.",
-                "Oxygen saturation improved to 96% after supplementation."
-            ]
-        },
-        {
-            "answer": "Statins reduce cholesterol and lower cardiovascular risk.",
-            "literature": [
-                "Statin therapy significantly reduces LDL cholesterol and cardiovascular events.",
-                "Long-term statin use is associated with reduced MI and stroke risk."
-            ],
-            "patient": [
-                "Patient prescribed atorvastatin 40mg for hypercholesterolaemia.",
-                "LDL improved from 4.2 to 2.1 mmol/L after statin initiation."
-            ]
-        },
-        {
-            "answer": "Surgery is always required for appendicitis.",
-            "literature": [
-                "Uncomplicated appendicitis may be managed with antibiotics alone in select patients.",
-                "Appendectomy remains standard but non-operative management is emerging."
-            ],
-            "patient": [
-                "Patient with mild appendicitis treated successfully with IV antibiotics.",
-                "No surgery performed — conservative management with antibiotics."
-            ]
-        },
+    lit = [
+        "Aspirin therapy reduces mortality in acute myocardial infarction.",
+        "Antiplatelet agents are standard treatment for MI."
     ]
+    pat = [
+        "Patient given aspirin 325mg on admission for chest pain.",
+        "History of MI, currently on aspirin therapy."
+    ]
+    answer = "Aspirin reduces cardiovascular mortality."
 
     print("\n" + "="*60)
-    print("CONFIDENCE SCORER — 10 DUMMY TEST CASES")
+    print("SCENARIO 1: Both sources available")
     print("="*60)
+    r = compute_confidence(answer, lit, pat, lit_available=True, pat_available=True)
+    print(f"  S(AL)={r['s_al']}  S(AP)={r['s_ap']}  A(L,P)={r['a_lp']}")
+    print(f"  Confidence={r['confidence']}  Penalty={r['penalty']}")
+    assert 0.0 <= r["confidence"] <= 1.0, "Score out of range"
+    print("  ✅ PASS")
 
-    for i, case in enumerate(test_cases, 1):
-        result = compute_confidence(
-            answer              = case["answer"],
-            literature_passages = case["literature"],
-            patient_passages    = case["patient"]
-        )
-        print(f"\nCase {i}: {case['answer'][:60]}...")
-        print(f"  S(AL) = {result['s_al']}  |  "
-              f"S(AP) = {result['s_ap']}  |  "
-              f"A(L,P) = {result['a_lp']}")
-        print(f"  Confidence = {result['confidence']}"
-              f"  {'⚠ Penalty applied' if result['penalty'] else '✓ No penalty'}")
+    print("\n" + "="*60)
+    print("SCENARIO 2: Literature only (pat_available=False)")
+    print("="*60)
+    r = compute_confidence(answer, lit, [], lit_available=True, pat_available=False)
+    print(f"  S(AL)={r['s_al']}  S(AP)={r['s_ap']}  A(L,P)={r['a_lp']}")
+    print(f"  Confidence={r['confidence']}  Penalty={r['penalty']}")
+    assert r["s_ap"] == 0.5, "S(AP) should be neutral 0.5"
+    assert r["a_lp"] == 0.5, "A(L,P) should be neutral 0.5"
+    print("  ✅ PASS — no encoder called for patient, no crash")
+
+    print("\n" + "="*60)
+    print("SCENARIO 3: Patient only (lit_available=False)")
+    print("="*60)
+    r = compute_confidence(answer, [], pat, lit_available=False, pat_available=True)
+    print(f"  S(AL)={r['s_al']}  S(AP)={r['s_ap']}  A(L,P)={r['a_lp']}")
+    print(f"  Confidence={r['confidence']}  Penalty={r['penalty']}")
+    assert r["s_al"] == 0.5, "S(AL) should be neutral 0.5"
+    assert r["a_lp"] == 0.5, "A(L,P) should be neutral 0.5"
+    print("  ✅ PASS — no encoder called for literature, no crash")
+
+    print("\n" + "="*60)
+    print("SCENARIO 4: No retrieval (both False)")
+    print("="*60)
+    r = compute_confidence(answer, [], [], lit_available=False, pat_available=False)
+    print(f"  S(AL)={r['s_al']}  S(AP)={r['s_ap']}  A(L,P)={r['a_lp']}")
+    print(f"  Confidence={r['confidence']}  Penalty={r['penalty']}")
+    assert r["s_al"] == 0.5
+    assert r["s_ap"] == 0.5
+    assert r["a_lp"] == 0.5
+    assert r["confidence"] == 0.5
+    print("  ✅ PASS — no encoder called at all, no crash")
+
+    print("\n" + "="*60)
+    print("ALL 4 SCENARIOS PASSED")
+    print("="*60)

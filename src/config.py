@@ -28,6 +28,7 @@ CONFIDENCE_WEIGHTS = (0.3, 0.3, 0.4)   # alpha, beta, gamma
 # Disagreement penalty threshold (do not change)
 PENALTY_THRESHOLD  = 0.3
 PENALTY_MULTIPLIER = 0.7
+NEUTRAL_SCORE      = 0.5
 
 # Retrieval settings
 TOP_K_LITERATURE = 3
