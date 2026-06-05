@@ -11,5 +11,8 @@ Weekly handoffs are stored as individual files in /docs/HANDOFF/:
 - Week 9  — Riktika → docs/HANDOFF/week9_riktika.md
 - Week 10 — Farhana → docs/HANDOFF/week10_farhana.md
 - Week 11 — Riktika → docs/HANDOFF/week11_riktika.md
+- Week 12 — Farhana → docs/HANDOFF/week12_farhana.md
+- Week 13 — Farhana → docs/HANDOFF/week13_farhana.md
+- Week 14 — Farhana → docs/HANDOFF/week14_farhana.md
 
 **Always read the most recent handoff file before starting your week.**
