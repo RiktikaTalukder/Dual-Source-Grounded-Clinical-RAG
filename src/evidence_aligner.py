@@ -13,7 +13,7 @@ def align_evidence(query, literature_passages, patient_summaries):
     Args:
         query (str): The clinical question
         literature_passages (list of str): Top passages from PMC literature
-        patient_summaries (list of dict or str): Top patient case summaries from MIMIC
+        patient_summaries (list of str): Top patient case summaries from MIMIC
 
     Returns:
         str: A formatted prompt string ready to send to the LLM

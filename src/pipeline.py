@@ -18,13 +18,15 @@ from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from evidence_aligner import align_evidence
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints
 import torch
 import pandas as pd
 import glob
 from chunking_baselines import chunk_dynamic
-# Default equal weights (same as confidence_scorer.py Week 8)
-DEFAULT_WEIGHTS = (1/3, 1/3, 1/3)
 
+# Default equal weights (same as confidence_scorer.py Week 8)
+DEFAULT_WEIGHTS = CONFIDENCE_WEIGHTS   # (0.3, 0.3, 0.4) — best weights from Week 11 grid search
 
 class Pipeline:
     """
@@ -59,7 +61,7 @@ class Pipeline:
     def _generate(self, prompt: str) -> str:
         """Run LLM and return answer string."""
         inputs = self.tokenizer(
-            prompt, return_tensors="pt", truncation=True, max_length=1024
+            prompt, return_tensors="pt", truncation=True, max_length=512
         )
         with torch.no_grad():
             outputs = self.llm.generate(
@@ -75,34 +77,11 @@ class Pipeline:
         Compute confidence using custom weights instead of always 1/3 each.
         This is the key change that lets grid search tune the weights.
         """
-        # Extract plain text from patient summary dicts for confidence scoring
-        pat_texts = []
-        for p in pat_summaries:
-            if isinstance(p, dict):
-                chunks = p.get("chunks", [])
-                if chunks:
-                    pat_texts.append(" ".join(str(c) for c in chunks))
-                else:
-                    pat_texts.append(str(p.get("icd_codes_top5", "")))
-            else:
-                pat_texts.append(str(p))
-        pat_summaries = pat_texts
         from confidence_scorer import (
             score_answer_literature,
             score_answer_patient,
             score_alignment
-        )# Extract plain text from patient summary dicts for confidence scoring
-        pat_texts = []
-        for p in pat_summaries:
-            if isinstance(p, dict):
-                chunks = p.get("chunks", [])
-                if chunks:
-                    pat_texts.append(" ".join(str(c) for c in chunks))
-                else:
-                    pat_texts.append(str(p.get("icd_codes_top5", "")))
-            else:
-                pat_texts.append(str(p))
-        pat_summaries = pat_texts
+        )
 
         s_al = score_answer_literature(answer, lit_passages)
         s_ap = score_answer_patient(answer, pat_summaries)
@@ -111,9 +90,9 @@ class Pipeline:
         alpha, beta, gamma = self.weights
         raw = alpha * s_al + beta * s_ap + gamma * a_lp
 
-        penalty = a_lp < 0.3
+        penalty = a_lp < PENALTY_THRESHOLD
         if penalty:
-            raw *= 0.7
+            raw *= PENALTY_MULTIPLIER
 
         return {
             "s_al":       round(s_al, 4),
@@ -122,6 +101,8 @@ class Pipeline:
             "confidence": round(raw, 4),
             "penalty":    penalty
         }
+
+
     def _get_patient_chunks(self, subject_id, query):
         """Read patient note from disk, return top-2 chunks via chunk_dynamic."""
         pattern = os.path.join(self.notes_dir, f"note_{subject_id}-*.txt")
@@ -141,6 +122,7 @@ class Pipeline:
                 if bhc.strip():
                     return [bhc[:800]]
         return []
+
     def run(self, query: str, k: int = 3) -> dict:
         """
         Run the full dual-source RAG pipeline on one query.
@@ -161,43 +143,27 @@ class Pipeline:
         else:
             lit_passages = [str(r) for r in lit_results]
 
-        # Step 2: Retrieve patient cases and get real note chunks
+        # Step 2: Retrieve patient cases
         pat_results = retrieve(
             query_text=query,
-            query_icd=set(),
+            query_icd=extract_icd_hints(query),
             model=self.pat_model,
             meta=self.pat_meta,
             index=self.pat_index,
             top_k=k
         )
-        pat_summaries = []
-        for r in pat_results:
-            if isinstance(r, dict):
-                subject_id = r.get("subject_id", "")
-                chunks = self._get_patient_chunks(subject_id, query)
-                # Get discharge_location from full metadata
-                discharge_location = "unknown"
-                if self.pat_meta_full is not None:
-                    row = self.pat_meta_full[
-                        self.pat_meta_full["subject_id"] == int(subject_id)
-                    ] if subject_id else pd.DataFrame()
-                    if not row.empty:
-                        discharge_location = str(row.iloc[0].get(
-                            "discharge_location", "unknown"))
-                pat_summaries.append({
-                    "age":              r.get("age", "?"),
-                    "gender":           r.get("gender", "?"),
-                    "admission_type":   r.get("admission_type", "?"),
-                    "icd_codes_top5":   r.get("icd_codes", "?"),
-                    "discharge_location": discharge_location,
-                    "chunks":           chunks,
-                    "subject_id":       subject_id,
-                })
-            else:
-                pat_summaries.append(str(r))
+        if pat_results and isinstance(pat_results[0], dict):
+            pat_summaries = [
+                (f"Patient: age {r.get('age','?')}, gender {r.get('gender','?')}, "
+                 f"admission type {r.get('admission_type','?')}, "
+                 f"ICD codes {r.get('icd_codes','?')}. "
+                 f"Similarity score: {round(r.get('rank_score', 0), 3)}.")
+                for r in pat_results
+            ]
+        else:
+            pat_summaries = [str(r) for r in pat_results]
 
-        # Step 3: Build prompt using evidence_aligner
-        from evidence_aligner import align_evidence
+        # Step 3: Build prompt using evidence_aligner (consistent with generator.py)
         prompt = align_evidence(query, lit_passages, pat_summaries)
 
         # Step 4: Generate answer and extract yes/no/maybe
@@ -206,7 +172,17 @@ class Pipeline:
         answer_extracted, extraction_method = _extract_answer(answer_raw)
 
         # Step 5: Score with custom weights
-        scores = self._compute_weighted_confidence(answer_raw, lit_passages, pat_summaries)
+        pat_texts = []
+        for p in pat_summaries:
+            if isinstance(p, dict):
+                chunks = p.get('chunks', [])
+                if chunks:
+                    pat_texts.append(' '.join(str(c) for c in chunks))
+                else:
+                    pat_texts.append(str(p.get('icd_codes_top5', '')))
+            else:
+                pat_texts.append(str(p))
+        scores = self._compute_weighted_confidence(answer_raw, lit_passages, pat_texts)
 
         return {
             "query":               query,

@@ -21,6 +21,7 @@ from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
 from evidence_aligner import align_evidence
 from confidence_scorer import compute_confidence
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # ── Load patient retriever resources once at startup ───────────────────────
@@ -39,7 +40,7 @@ print("[generator] LLM ready.")
 def _generate_answer(prompt: str, max_new_tokens: int = 10) -> str:
     """Run flan-t5-base on the prompt and return the answer string."""
     inputs = _tokenizer(prompt, return_tensors="pt",
-                        truncation=True, max_length=1024)
+                        truncation=True, max_length=512)
     with torch.no_grad():
         outputs = _llm_model.generate(
             **inputs,
@@ -48,6 +49,8 @@ def _generate_answer(prompt: str, max_new_tokens: int = 10) -> str:
             early_stopping=True
         )
     return _tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+
+
 
 def _extract_answer(raw: str) -> tuple:
     """
@@ -87,7 +90,7 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     print(f"  [1/5] Retrieving literature...")
     lit_results = retrieve_literature(query, k=top_k_lit)
     if lit_results and isinstance(lit_results[0], dict):
-        literature_passages = [r.get("text", r.get("chunk", str(r))) for r in lit_results]
+        literature_passages = [r.get("passage", str(r)) for r in lit_results]
     else:
         literature_passages = [str(r) for r in lit_results]
 
@@ -95,7 +98,7 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     print(f"  [2/5] Retrieving patient cases...")
     pat_results = retrieve(
         query_text=query,
-        query_icd=set(),
+        query_icd=extract_icd_hints(query),
         model=_pat_model,
         meta=_pat_meta,
         index=_pat_index,
@@ -103,7 +106,10 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     )
     if pat_results and isinstance(pat_results[0], dict):
         patient_summaries = [
-            r.get("summary", r.get("text", r.get("note_text", str(r))))
+            (f"Patient: age {r.get('age','?')}, gender {r.get('gender','?')}, "
+             f"admission type {r.get('admission_type','?')}, "
+             f"ICD codes {r.get('icd_codes','?')}. "
+             f"Similarity score: {round(r.get('rank_score', 0), 3)}.")
             for r in pat_results
         ]
     else:
@@ -118,9 +124,24 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     answer_raw = _generate_answer(prompt)
     answer_extracted, extraction_method = _extract_answer(answer_raw)
 
-    # ── Step 5: Score confidence ───────────────────────────────────────────
+    # ── Step 5: Score confidence using best weights from grid search ───────────
     print(f"  [5/5] Scoring confidence...")
-    scores = compute_confidence(answer_raw, literature_passages, patient_summaries)
+    from confidence_scorer import score_answer_literature, score_answer_patient, score_alignment
+    alpha, beta, gamma = CONFIDENCE_WEIGHTS
+    s_al = score_answer_literature(answer, literature_passages)
+    s_ap = score_answer_patient(answer, patient_summaries)
+    a_lp = score_alignment(literature_passages, patient_summaries)
+    raw_conf = alpha * s_al + beta * s_ap + gamma * a_lp
+    penalty_applied = a_lp < PENALTY_THRESHOLD
+    if penalty_applied:
+        raw_conf *= PENALTY_MULTIPLIER
+    scores = {
+        "s_al":       round(s_al, 4),
+        "s_ap":       round(s_ap, 4),
+        "a_lp":       round(a_lp, 4),
+        "confidence": round(raw_conf, 4),
+        "penalty":    penalty_applied
+    }
 
     runtime = round(time.time() - t_start, 2)
 
