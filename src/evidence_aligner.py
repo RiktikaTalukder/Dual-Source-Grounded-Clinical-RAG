@@ -13,7 +13,7 @@ def align_evidence(query, literature_passages, patient_summaries):
     Args:
         query (str): The clinical question
         literature_passages (list of str): Top passages from PMC literature
-        patient_summaries (list of str): Top patient case summaries from MIMIC
+        patient_summaries (list of dict or str): Top patient case summaries from MIMIC
 
     Returns:
         str: A formatted prompt string ready to send to the LLM
@@ -30,15 +30,29 @@ def align_evidence(query, literature_passages, patient_summaries):
 
     # Format patient case evidence block
     if patient_summaries:
-        pat_block = "\n".join(
-            f"[PATIENT {i+1}] {summary.strip()}"
-            for i, summary in enumerate(patient_summaries)
-        )
+        pat_lines = []
+        for i, p in enumerate(patient_summaries):
+            if isinstance(p, dict):
+                age = p.get("age", "?")
+                gender = p.get("gender", "?")
+                admission = p.get("admission_type", "?")
+                icd = p.get("icd_codes_top5", "?")
+                outcome = p.get("discharge_location", "?")
+                chunks = p.get("chunks", [])
+                chunk_text = " ... ".join(c.strip() for c in chunks if c.strip())
+                pat_lines.append(
+                    f"Patient {i+1} (age {age}, gender {gender}, "
+                    f"admission {admission}, ICD: {icd}, outcome: {outcome}): "
+                    f"{chunk_text}"
+                )
+            else:
+                pat_lines.append(f"Patient {i+1}: {str(p).strip()}")
+        pat_block = "\n".join(pat_lines)
     else:
         pat_block = "No similar patient cases retrieved."
 
     # Assemble the full structured prompt
-    prompt = f"""[SYSTEM: You are a clinical AI assistant. Answer the question using the evidence below. Be concise and medically accurate.]
+    prompt = f"""[SYSTEM: You are a clinical AI assistant. Answer the question using the evidence below. Be concise and medically accurate. Your answer must be exactly one of three words: yes, no, or maybe. Do not include any explanation, qualification, or additional words.]
 
 [LITERATURE EVIDENCE:
 {lit_block}]
@@ -48,7 +62,7 @@ def align_evidence(query, literature_passages, patient_summaries):
 
 [QUESTION: {query}]
 
-[ANSWER:]"""
+[ANSWER (yes, no, or maybe):]"""
 
     return prompt
 

@@ -19,7 +19,9 @@ from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
-
+import pandas as pd
+import glob
+from chunking_baselines import chunk_dynamic
 # Default equal weights (same as confidence_scorer.py Week 8)
 DEFAULT_WEIGHTS = (1/3, 1/3, 1/3)
 
@@ -36,6 +38,13 @@ class Pipeline:
                  If None, uses equal weights (1/3, 1/3, 1/3)
         """
         self.weights = weights if weights is not None else DEFAULT_WEIGHTS
+        # Load patient metadata for discharge_location lookup
+        meta_path = "data/mimic/processed/patient_metadata_stratified.csv"
+        if os.path.exists(meta_path):
+            self.pat_meta_full = pd.read_csv(meta_path)
+        else:
+            self.pat_meta_full = None
+        self.notes_dir = "data/mimic/mimic_sample"
 
         print("[Pipeline] Loading LLM (flan-t5-base)...")
         self.tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
@@ -55,7 +64,7 @@ class Pipeline:
         with torch.no_grad():
             outputs = self.llm.generate(
                 **inputs,
-                max_new_tokens=200,
+                max_new_tokens=10,
                 num_beams=4,
                 early_stopping=True
             )
@@ -66,11 +75,34 @@ class Pipeline:
         Compute confidence using custom weights instead of always 1/3 each.
         This is the key change that lets grid search tune the weights.
         """
+        # Extract plain text from patient summary dicts for confidence scoring
+        pat_texts = []
+        for p in pat_summaries:
+            if isinstance(p, dict):
+                chunks = p.get("chunks", [])
+                if chunks:
+                    pat_texts.append(" ".join(str(c) for c in chunks))
+                else:
+                    pat_texts.append(str(p.get("icd_codes_top5", "")))
+            else:
+                pat_texts.append(str(p))
+        pat_summaries = pat_texts
         from confidence_scorer import (
             score_answer_literature,
             score_answer_patient,
             score_alignment
-        )
+        )# Extract plain text from patient summary dicts for confidence scoring
+        pat_texts = []
+        for p in pat_summaries:
+            if isinstance(p, dict):
+                chunks = p.get("chunks", [])
+                if chunks:
+                    pat_texts.append(" ".join(str(c) for c in chunks))
+                else:
+                    pat_texts.append(str(p.get("icd_codes_top5", "")))
+            else:
+                pat_texts.append(str(p))
+        pat_summaries = pat_texts
 
         s_al = score_answer_literature(answer, lit_passages)
         s_ap = score_answer_patient(answer, pat_summaries)
@@ -90,7 +122,25 @@ class Pipeline:
             "confidence": round(raw, 4),
             "penalty":    penalty
         }
-
+    def _get_patient_chunks(self, subject_id, query):
+        """Read patient note from disk, return top-2 chunks via chunk_dynamic."""
+        pattern = os.path.join(self.notes_dir, f"note_{subject_id}-*.txt")
+        matches = glob.glob(pattern)
+        if matches:
+            with open(matches[0], "r", encoding="utf-8") as f:
+                note_text = f.read()
+            chunks = chunk_dynamic(note_text, query, top_n=2)
+            return [c for c in chunks if c.strip()]
+        # Fallback to bhc field
+        if self.pat_meta_full is not None:
+            row = self.pat_meta_full[
+                self.pat_meta_full["subject_id"] == int(subject_id)
+            ]
+            if not row.empty:
+                bhc = str(row.iloc[0].get("bhc", ""))
+                if bhc.strip():
+                    return [bhc[:800]]
+        return []
     def run(self, query: str, k: int = 3) -> dict:
         """
         Run the full dual-source RAG pipeline on one query.
@@ -111,7 +161,7 @@ class Pipeline:
         else:
             lit_passages = [str(r) for r in lit_results]
 
-        # Step 2: Retrieve patient cases
+        # Step 2: Retrieve patient cases and get real note chunks
         pat_results = retrieve(
             query_text=query,
             query_icd=set(),
@@ -120,39 +170,50 @@ class Pipeline:
             index=self.pat_index,
             top_k=k
         )
-        if pat_results and isinstance(pat_results[0], dict):
-            pat_summaries = [
-                r.get("summary", r.get("text", r.get("note_text", str(r))))
-                for r in pat_results
-            ]
-        else:
-            pat_summaries = [str(r) for r in pat_results]
+        pat_summaries = []
+        for r in pat_results:
+            if isinstance(r, dict):
+                subject_id = r.get("subject_id", "")
+                chunks = self._get_patient_chunks(subject_id, query)
+                # Get discharge_location from full metadata
+                discharge_location = "unknown"
+                if self.pat_meta_full is not None:
+                    row = self.pat_meta_full[
+                        self.pat_meta_full["subject_id"] == int(subject_id)
+                    ] if subject_id else pd.DataFrame()
+                    if not row.empty:
+                        discharge_location = str(row.iloc[0].get(
+                            "discharge_location", "unknown"))
+                pat_summaries.append({
+                    "age":              r.get("age", "?"),
+                    "gender":           r.get("gender", "?"),
+                    "admission_type":   r.get("admission_type", "?"),
+                    "icd_codes_top5":   r.get("icd_codes", "?"),
+                    "discharge_location": discharge_location,
+                    "chunks":           chunks,
+                    "subject_id":       subject_id,
+                })
+            else:
+                pat_summaries.append(str(r))
 
-        # Step 3: Build prompt
-        lit_block = "\n".join(
-            f"[LIT {i+1}] {p.strip()}" for i, p in enumerate(lit_passages)
-        )
-        pat_block = "\n".join(
-            f"[PATIENT {i+1}] {s.strip()}" for i, s in enumerate(pat_summaries)
-        )
-        prompt = (
-            "[SYSTEM: You are a clinical AI assistant. "
-            "Answer the question using the evidence below. "
-            "Be concise and medically accurate.]\n\n"
-            f"[LITERATURE EVIDENCE:\n{lit_block}]\n\n"
-            f"[PATIENT CASE EVIDENCE:\n{pat_block}]\n\n"
-            f"[QUESTION: {query}]\n\n[ANSWER:]"
-        )
+        # Step 3: Build prompt using evidence_aligner
+        from evidence_aligner import align_evidence
+        prompt = align_evidence(query, lit_passages, pat_summaries)
 
-        # Step 4: Generate answer
-        answer = self._generate(prompt)
+        # Step 4: Generate answer and extract yes/no/maybe
+        from generator import _extract_answer
+        answer_raw = self._generate(prompt)
+        answer_extracted, extraction_method = _extract_answer(answer_raw)
 
         # Step 5: Score with custom weights
-        scores = self._compute_weighted_confidence(answer, lit_passages, pat_summaries)
+        scores = self._compute_weighted_confidence(answer_raw, lit_passages, pat_summaries)
 
         return {
             "query":               query,
-            "answer":              answer,
+            "answer":              answer_extracted,
+            "answer_raw":          answer_raw,
+            "answer_extracted":    answer_extracted,
+            "extraction_method":   extraction_method,
             "confidence":          scores["confidence"],
             "s_al":                scores["s_al"],
             "s_ap":                scores["s_ap"],
@@ -160,7 +221,7 @@ class Pipeline:
             "penalty":             scores["penalty"],
             "weights":             self.weights,
             "literature_passages": lit_passages,
-            "patient_summaries":   pat_summaries
+            "patient_summaries":   pat_summaries,
         }
 
 

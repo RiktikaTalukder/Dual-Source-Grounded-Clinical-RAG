@@ -36,7 +36,7 @@ _llm_model.eval()
 print("[generator] LLM ready.")
 
 
-def _generate_answer(prompt: str, max_new_tokens: int = 200) -> str:
+def _generate_answer(prompt: str, max_new_tokens: int = 10) -> str:
     """Run flan-t5-base on the prompt and return the answer string."""
     inputs = _tokenizer(prompt, return_tensors="pt",
                         truncation=True, max_length=1024)
@@ -49,7 +49,25 @@ def _generate_answer(prompt: str, max_new_tokens: int = 200) -> str:
         )
     return _tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
-
+def _extract_answer(raw: str) -> tuple:
+    """
+    Three-step answer extraction.
+    Returns (answer_extracted, extraction_method)
+    """
+    import re
+    # Step 1: direct — first token
+    first_token = raw.strip().split()[0] if raw.strip() else ""
+    cleaned = re.sub(r'[^a-z]', '', first_token.lower())
+    if cleaned in ("yes", "no", "maybe"):
+        return cleaned, "direct"
+    # Step 2: fallback regex — search first 20 tokens
+    tokens = raw.strip().split()[:20]
+    for token in tokens:
+        cleaned = re.sub(r'[^a-z]', '', token.lower())
+        if cleaned in ("yes", "no", "maybe"):
+            return cleaned, "fallback_regex"
+    # Step 3: abstain
+    return "abstain", "abstain"
 def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     """
     Full dual-source RAG pipeline.
@@ -97,17 +115,21 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
 
     # ── Step 4: Generate answer with flan-t5-base ──────────────────────────
     print(f"  [4/5] Generating answer...")
-    answer = _generate_answer(prompt)
+    answer_raw = _generate_answer(prompt)
+    answer_extracted, extraction_method = _extract_answer(answer_raw)
 
     # ── Step 5: Score confidence ───────────────────────────────────────────
     print(f"  [5/5] Scoring confidence...")
-    scores = compute_confidence(answer, literature_passages, patient_summaries)
+    scores = compute_confidence(answer_raw, literature_passages, patient_summaries)
 
     runtime = round(time.time() - t_start, 2)
 
     result = {
         "query":                query,
-        "answer":               answer,
+        "answer":               answer_extracted,
+        "answer_raw":           answer_raw,
+        "answer_extracted":     answer_extracted,
+        "extraction_method":    extraction_method,
         "confidence":           round(scores["confidence"], 4),
         "s_al":                 round(scores["s_al"], 4),
         "s_ap":                 round(scores["s_ap"], 4),
