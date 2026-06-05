@@ -16,20 +16,24 @@ Design note:
 """
 
 from sentence_transformers import SentenceTransformer
+from config import MODEL_REVISIONS
 import faiss
 import numpy as np
 import pandas as pd
 import os
 
-# ── ClinicalBERT — loaded lazily on first use ──────────────────────
+# ── S-PubMedBert — loaded lazily on first use ──────────────────────
 _cb_model = None
 
 def _get_model():
     global _cb_model
     if _cb_model is None:
-        print("Loading ClinicalBERT... (this takes ~1 minute first time)")
-        _cb_model = SentenceTransformer("medicalai/ClinicalBERT")
-        print("ClinicalBERT loaded!")
+        print("Loading S-PubMedBert-MS-MARCO...")
+        _cb_model = SentenceTransformer(
+            "pritamdeka/S-PubMedBert-MS-MARCO",
+            revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"]
+        )
+        print("S-PubMedBert loaded.")
     return _cb_model
 
 

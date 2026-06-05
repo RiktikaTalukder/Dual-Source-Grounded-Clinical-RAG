@@ -6,6 +6,7 @@ using google/flan-t5-base directly (no pipeline — compatible with transformers
 
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
+from config import MODEL_REVISIONS
 
 _model = None
 _tokenizer = None
@@ -14,8 +15,8 @@ def get_model():
     global _model, _tokenizer
     if _model is None:
         print("Loading flan-t5-base summarizer...")
-        _tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
-        _model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+        _tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base", revision=MODEL_REVISIONS["google/flan-t5-base"])
+        _model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base", revision=MODEL_REVISIONS["google/flan-t5-base"])
         _model.eval()
         print("Summarizer ready.")
     return _model, _tokenizer

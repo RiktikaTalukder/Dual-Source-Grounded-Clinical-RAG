@@ -9,6 +9,7 @@ import json
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
+from config import MODEL_REVISIONS
 
 # ── Config ───────────────────────────────────────────────────────────────────
 _base      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,7 +27,7 @@ def _load_resources():
     global _model, _index, _texts
     if _model is None:
         print("Loading BiomedBERT model...")
-        _model = SentenceTransformer(MODEL_NAME)
+        _model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"])
     if _index is None:
         print("Loading FAISS index...")
         _index = faiss.read_index(INDEX_PATH)

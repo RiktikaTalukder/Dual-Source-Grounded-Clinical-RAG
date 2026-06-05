@@ -56,7 +56,7 @@ def build_passage_texts(articles):
 def embed_and_index(passages, model_name, batch_size):
     """Embed all passages and build a FAISS flat index."""
     print(f"Loading model: {model_name}")
-    model = SentenceTransformer(model_name)
+    model = SentenceTransformer(model_name, revision=MODEL_REVISION)
 
     print(f"Embedding {len(passages)} passages in batches of {batch_size}...")
     embeddings = model.encode(

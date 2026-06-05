@@ -18,6 +18,7 @@ the test set — this is a known limitation to note in thesis §5.
 import json
 import csv
 import os
+from config import MODEL_REVISIONS
 import random
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -38,7 +39,7 @@ EMBED_MODEL_NAME = "pritamdeka/S-PubMedBert-MS-MARCO"
 
 # Load embedding model once
 print("Loading BiomedBERT for semantic recall evaluation...")
-_embed_model = SentenceTransformer(EMBED_MODEL_NAME)
+_embed_model = SentenceTransformer(EMBED_MODEL_NAME, revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"])
 print("Model loaded.")
 
 

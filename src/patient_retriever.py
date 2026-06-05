@@ -38,7 +38,7 @@ def normalize_icd(code: str) -> str:
 
 def load_resources():
     print(f"Loading model: {MODEL_NAME}")
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"])
 
     print("Loading patient metadata...")
     STRATIFIED_PATH = os.path.join(_base, "data", "mimic", "processed", "patient_metadata_stratified.csv")
@@ -194,7 +194,7 @@ def build_patient_index(model, meta):
 if __name__ == "__main__":
 
     print("Rebuilding mimic_patients.index with S-PubMedBert + BHC embeddings...")
-    tmp_model = SentenceTransformer(MODEL_NAME)
+    tmp_model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"])
 
     # Load ONLY patients whose notes exist in mimic_sample/
     # This gives us the ~637 stratified corpus patients, not all 431,231
@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     # Load and run 5 test queries using filtered metadata
     print("Loading resources for test queries...")
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"])
     meta  = pd.read_csv(FILTERED_META_PATH, dtype=str)
     meta["icd_set"] = meta["icd_codes_top5"].fillna("").apply(
         lambda x: {normalize_icd(c)
