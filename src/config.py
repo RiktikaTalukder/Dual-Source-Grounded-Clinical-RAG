@@ -31,8 +31,8 @@ PENALTY_MULTIPLIER = 0.7
 NEUTRAL_SCORE      = 0.5
 
 # Retrieval settings
-TOP_K_LITERATURE = 3
-TOP_K_PATIENTS   = 3
+TOP_K_LITERATURE = 5
+TOP_K_PATIENTS   = 5
 
 # Grid search record (for reference)
 GRID_SEARCH_RESULTS = {

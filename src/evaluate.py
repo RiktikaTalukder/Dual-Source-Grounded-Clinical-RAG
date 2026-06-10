@@ -114,7 +114,7 @@ def compute_bertscore(data):
     except ImportError:
         return {"bertscore_mean": None, "bertscore_error": "transformers not installed"}
 
-    MODEL_NAME = "microsoft/deberta-xlarge-mnli"
+    MODEL_NAME = "roberta-large"
     MAX_LENGTH = 512
 
     print(f"  [BERTScore] Loading {MODEL_NAME}...")

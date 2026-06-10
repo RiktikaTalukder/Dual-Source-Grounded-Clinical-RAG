@@ -52,7 +52,7 @@ def align_evidence(query, literature_passages, patient_summaries):
         pat_block = "No similar patient cases retrieved."
 
     # Assemble the full structured prompt
-    prompt = f"""[SYSTEM: You are a clinical AI assistant. Answer the question using the evidence below. Be concise and medically accurate. Your answer must be exactly one of three words: yes, no, or maybe. Do not include any explanation, qualification, or additional words.]
+    prompt = f"""[SYSTEM: You are a clinical AI assistant. Read the literature evidence and patient cases carefully. Based on the evidence, answer the clinical question. Consider whether the evidence supports, contradicts, or is uncertain about the claim. Your answer must be exactly one of three words: yes, no, or maybe. Output only that single word. Do not explain.]
 
 [LITERATURE EVIDENCE:
 {lit_block}]

@@ -1,0 +1,1484 @@
+{
+  "metadata": {
+    "week": "Week 20",
+    "member": "Farhana (M2)",
+    "n_combos": 100,
+    "n_questions": 200,
+    "best_combo": "literature_heavy__thr0.35__mul0.7",
+    "best_ece": 0.0116
+  },
+  "all_combos": {
+    "equal_thirds__thr0.2__mul0.5": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1928,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3281,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.2__mul0.6": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1413,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3797,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.2__mul0.7": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0898,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4312,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.2__mul0.8": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0382,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4827,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.25__mul0.5": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1894,
+      "accuracy": 0.48,
+      "avg_confidence": 0.317,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.25__mul0.6": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1356,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3707,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.25__mul0.7": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0819,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4245,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.25__mul0.8": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0288,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4783,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.3__mul0.5": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1949,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3088,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.3__mul0.6": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1395,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3642,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.3__mul0.7": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0841,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4196,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.3__mul0.8": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0287,
+      "accuracy": 0.48,
+      "avg_confidence": 0.475,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.35__mul0.5": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1979,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3021,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.35__mul0.6": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1433,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3589,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.35__mul0.7": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0845,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4156,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.35__mul0.8": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0277,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4723,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.4__mul0.5": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1997,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3004,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.4__mul0.6": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1426,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3575,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.4__mul0.7": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0855,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4145,
+      "n_questions": 200
+    },
+    "equal_thirds__thr0.4__mul0.8": {
+      "weight_name": "equal_thirds",
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0284,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4716,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.2__mul0.5": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1522,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3832,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.2__mul0.6": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.6,
+      "ece": 0.095,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4443,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.2__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0299,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5054,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.2__mul0.8": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0866,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5666,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.25__mul0.5": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1443,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3706,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.25__mul0.6": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.6,
+      "ece": 0.0847,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4343,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.25__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0179,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4979,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.25__mul0.8": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0815,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5615,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.3__mul0.5": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.5,
+      "ece": 0.147,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3615,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.3__mul0.6": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.6,
+      "ece": 0.0855,
+      "accuracy": 0.48,
+      "avg_confidence": 0.427,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.3__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0166,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4924,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.3__mul0.8": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0779,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5579,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.35__mul0.5": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.5,
+      "ece": 0.145,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3542,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.35__mul0.6": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.6,
+      "ece": 0.082,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4211,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.35__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0116,
+      "accuracy": 0.48,
+      "avg_confidence": 0.488,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.35__mul0.8": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0749,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5549,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.4__mul0.5": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1493,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3523,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.4__mul0.6": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.6,
+      "ece": 0.086,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4196,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.4__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0152,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4869,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.4__mul0.8": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0781,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5542,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.2__mul0.5": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1521,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3833,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.2__mul0.6": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.6,
+      "ece": 0.095,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4444,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.2__mul0.7": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0299,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5056,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.2__mul0.8": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0867,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5667,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.25__mul0.5": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1443,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3707,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.25__mul0.6": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.6,
+      "ece": 0.0846,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4343,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.25__mul0.7": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.7,
+      "ece": 0.018,
+      "accuracy": 0.48,
+      "avg_confidence": 0.498,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.25__mul0.8": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0816,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5616,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.3__mul0.5": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.5,
+      "ece": 0.147,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3616,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.3__mul0.6": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.6,
+      "ece": 0.0855,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4271,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.3__mul0.7": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0167,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4925,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.3__mul0.8": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.8,
+      "ece": 0.078,
+      "accuracy": 0.48,
+      "avg_confidence": 0.558,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.35__mul0.5": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1449,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3542,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.35__mul0.6": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.6,
+      "ece": 0.0819,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4212,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.35__mul0.7": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0117,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4881,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.35__mul0.8": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.8,
+      "ece": 0.075,
+      "accuracy": 0.48,
+      "avg_confidence": 0.555,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.4__mul0.5": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1492,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3523,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.4__mul0.6": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.6,
+      "ece": 0.0859,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4197,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.4__mul0.7": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0152,
+      "accuracy": 0.48,
+      "avg_confidence": 0.487,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.4__mul0.8": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0782,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5543,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.2__mul0.5": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.5,
+      "ece": 0.2132,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3005,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.2__mul0.6": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1694,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3473,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.2__mul0.7": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.7,
+      "ece": 0.1198,
+      "accuracy": 0.48,
+      "avg_confidence": 0.394,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.2__mul0.8": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.8,
+      "ece": 0.077,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4407,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.25__mul0.5": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.5,
+      "ece": 0.215,
+      "accuracy": 0.48,
+      "avg_confidence": 0.2901,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.25__mul0.6": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1661,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3389,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.25__mul0.7": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.7,
+      "ece": 0.1143,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3878,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.25__mul0.8": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0695,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4366,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.3__mul0.5": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.5,
+      "ece": 0.2188,
+      "accuracy": 0.48,
+      "avg_confidence": 0.2824,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.3__mul0.6": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1715,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3328,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.3__mul0.7": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.7,
+      "ece": 0.1181,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3831,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.3__mul0.8": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0717,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4335,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.35__mul0.5": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.5,
+      "ece": 0.2199,
+      "accuracy": 0.48,
+      "avg_confidence": 0.2761,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.35__mul0.6": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1712,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3277,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.35__mul0.7": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.7,
+      "ece": 0.1166,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3793,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.35__mul0.8": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0743,
+      "accuracy": 0.48,
+      "avg_confidence": 0.431,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.4__mul0.5": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.5,
+      "ece": 0.2249,
+      "accuracy": 0.48,
+      "avg_confidence": 0.2744,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.4__mul0.6": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1759,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3264,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.4__mul0.7": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.7,
+      "ece": 0.121,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3783,
+      "n_questions": 200
+    },
+    "alignment_heavy__thr0.4__mul0.8": {
+      "weight_name": "alignment_heavy",
+      "weights": [
+        0.3,
+        0.3,
+        0.4
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0736,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4303,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.2__mul0.5": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1674,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3625,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.2__mul0.6": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1103,
+      "accuracy": 0.48,
+      "avg_confidence": 0.42,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.2__mul0.7": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0524,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4775,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.2__mul0.8": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.2,
+      "penalty_multiplier": 0.8,
+      "ece": 0.055,
+      "accuracy": 0.48,
+      "avg_confidence": 0.535,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.25__mul0.5": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1704,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3505,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.25__mul0.6": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1105,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4104,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.25__mul0.7": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0505,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4703,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.25__mul0.8": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.25,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0593,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5302,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.3__mul0.5": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.5,
+      "ece": 0.168,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3417,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.3__mul0.6": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1063,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4034,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.3__mul0.7": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0447,
+      "accuracy": 0.48,
+      "avg_confidence": 0.465,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.3__mul0.8": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0497,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5267,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.35__mul0.5": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1637,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3346,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.35__mul0.6": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1006,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3977,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.35__mul0.7": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0426,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4608,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.35__mul0.8": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0439,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5239,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.4__mul0.5": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.5,
+      "ece": 0.1682,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3328,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.4__mul0.6": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.6,
+      "ece": 0.1048,
+      "accuracy": 0.48,
+      "avg_confidence": 0.3962,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.4__mul0.7": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0415,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4597,
+      "n_questions": 200
+    },
+    "strong_literature__thr0.4__mul0.8": {
+      "weight_name": "strong_literature",
+      "weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.8,
+      "ece": 0.0431,
+      "accuracy": 0.48,
+      "avg_confidence": 0.5231,
+      "n_questions": 200
+    }
+  },
+  "top5": {
+    "literature_heavy__thr0.35__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0116,
+      "accuracy": 0.48,
+      "avg_confidence": 0.488,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.35__mul0.7": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.35,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0117,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4881,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.4__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0152,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4869,
+      "n_questions": 200
+    },
+    "balanced_lit_patient__thr0.4__mul0.7": {
+      "weight_name": "balanced_lit_patient",
+      "weights": [
+        0.4,
+        0.4,
+        0.2
+      ],
+      "penalty_threshold": 0.4,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0152,
+      "accuracy": 0.48,
+      "avg_confidence": 0.487,
+      "n_questions": 200
+    },
+    "literature_heavy__thr0.3__mul0.7": {
+      "weight_name": "literature_heavy",
+      "weights": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "penalty_threshold": 0.3,
+      "penalty_multiplier": 0.7,
+      "ece": 0.0166,
+      "accuracy": 0.48,
+      "avg_confidence": 0.4924,
+      "n_questions": 200
+    }
+  }
+}

@@ -153,13 +153,26 @@ class Pipeline:
             top_k=k
         )
         if pat_results and isinstance(pat_results[0], dict):
-            pat_summaries = [
-                (f"Patient: age {r.get('age','?')}, gender {r.get('gender','?')}, "
-                 f"admission type {r.get('admission_type','?')}, "
-                 f"ICD codes {r.get('icd_codes','?')}. "
-                 f"Similarity score: {round(r.get('rank_score', 0), 3)}.")
-                for r in pat_results
-            ]
+            pat_summaries = []
+            for r in pat_results:
+                subject_id = r.get("subject_id", "")
+                chunks = self._get_patient_chunks(subject_id, query) if subject_id else []
+                age        = r.get("age", "?")
+                gender     = r.get("gender", "?")
+                admission  = r.get("admission_type", "?")
+                icd        = r.get("icd_codes", "?")
+                outcome    = r.get("discharge_location", "?")
+                if chunks:
+                    chunk_text = " ... ".join(c.strip() for c in chunks if c.strip())
+                else:
+                    # fallback to BHC field if note file not found
+                    chunk_text = r.get("bhc", r.get("brief_hospital_course", "No clinical notes available."))
+                    if not chunk_text or str(chunk_text).strip() in ("", "nan"):
+                        chunk_text = "No clinical notes available."
+                pat_summaries.append(
+                    f"Patient (age {age}, {gender}, {admission}, "
+                    f"ICD: {icd}, outcome: {outcome}): {str(chunk_text)[:600]}"
+                )
         else:
             pat_summaries = [str(r) for r in pat_results]
 
