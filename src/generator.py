@@ -21,7 +21,7 @@ from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
 from evidence_aligner import align_evidence
 from confidence_scorer import compute_confidence
-from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints, MODEL_REVISIONS
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # ── Load patient retriever resources once at startup ───────────────────────
@@ -30,14 +30,14 @@ _pat_model, _pat_meta, _pat_index = load_resources()
 print("[generator] Patient resources ready.")
 
 # ── Load flan-t5-base once at startup ─────────────────────────────────────
-print("[generator] Loading flan-t5-base LLM (first run downloads ~1GB)...")
+print(f"[generator] Loading {GENERATOR_MODEL} LLM...")
 _tokenizer = AutoTokenizer.from_pretrained(
-    "google/flan-t5-base",
-    revision=MODEL_REVISIONS["google/flan-t5-base"]
+    GENERATOR_MODEL,
+    revision=MODEL_REVISIONS[GENERATOR_MODEL]
 )
 _llm_model  = AutoModelForSeq2SeqLM.from_pretrained(
-    "google/flan-t5-base",
-    revision=MODEL_REVISIONS["google/flan-t5-base"]
+    GENERATOR_MODEL,
+    revision=MODEL_REVISIONS[GENERATOR_MODEL]
 )
 _llm_model.eval()
 print("[generator] LLM ready.")

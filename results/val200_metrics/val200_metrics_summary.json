@@ -1,47 +1,41 @@
 {
   "dual_source": {
-    "abstain_rate": 0.0,
-    "accuracy": 0.48,
-    "macro_f1": 0.2872,
-    "ece": 0.1181,
+    "abstain_rate": 0.015,
+    "accuracy": 0.53,
+    "macro_f1": 0.3136,
+    "ece": 0.1578,
     "recall@5": 0.585,
     "recall@10": 0.585,
-    "bertscore": 0.9815
+    "bertscore": 0.9816
   },
   "baseline_literature_only": {
-    "abstain_rate": 0.0,
-    "accuracy": 0.47,
-    "macro_f1": 0.2821,
-    "ece": 0.1329,
+    "abstain_rate": 0.01,
+    "accuracy": 0.425,
+    "macro_f1": 0.2744,
+    "ece": 0.178,
     "recall@5": 0.585,
     "recall@10": 0.585,
-    "bertscore": 0.9815
+    "bertscore": 0.9816
   },
   "baseline_patient_only": {
     "abstain_rate": 0.0,
-    "accuracy": 0.445,
-    "macro_f1": 0.3093,
-    "ece": 0.16,
+    "accuracy": 0.44,
+    "macro_f1": 0.3011,
+    "ece": 0.168,
     "recall@5": 0.0,
     "recall@10": 0.0,
     "bertscore": null
   },
   "baseline_no_retrieval": {
     "abstain_rate": 0.0,
-    "accuracy": 0.425,
-    "macro_f1": 0.2966,
-    "ece": 0.075,
+    "accuracy": 0.445,
+    "macro_f1": 0.3004,
+    "ece": 0.055,
     "recall@5": 0.0,
     "recall@10": 0.0,
     "bertscore": null
   },
   "baseline_fixed_chunk": {
-    "abstain_rate": 0.0,
-    "accuracy": 0.47,
-    "macro_f1": 0.2821,
-    "ece": 0.1329,
-    "recall@5": 0.585,
-    "recall@10": 0.585,
-    "bertscore": 0.9815
+    "error": "Cannot send a request, as the client has been closed."
   }
 }

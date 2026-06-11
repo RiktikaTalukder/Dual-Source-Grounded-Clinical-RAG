@@ -1,6 +1,6 @@
 {
-  "s_al_vs_s_ap": 0.3016,
-  "s_al_vs_a_lp": -0.0202,
-  "s_ap_vs_a_lp": 0.0568,
-  "interpretation": "All correlations below 0.5 \u2014 formula components confirmed empirically independent. Supports A(L,P) redesign."
+  "s_al_vs_s_ap": 0.674,
+  "s_al_vs_a_lp": -0.0616,
+  "s_ap_vs_a_lp": -0.0001,
+  "interpretation": "Moderate correlation (0.5\u20130.7) \u2014 note in thesis but not a critical issue."
 }

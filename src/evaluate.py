@@ -109,7 +109,6 @@ def compute_bertscore(data):
     Returns mean BERTScore F1 across all queries.
     """
     try:
-        import torch
         from transformers import AutoTokenizer, AutoModel
     except ImportError:
         return {"bertscore_mean": None, "bertscore_error": "transformers not installed"}

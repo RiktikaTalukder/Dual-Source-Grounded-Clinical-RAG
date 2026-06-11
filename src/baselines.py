@@ -35,7 +35,7 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
-from config import extract_icd_hints, MODEL_REVISIONS
+from config import extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL
 
 # ── Lazy-loaded resources (only loaded when first needed) ─────────────────
 _tokenizer  = None
@@ -49,12 +49,12 @@ def _ensure_resources():
     global _tokenizer, _llm, _pat_model, _pat_meta, _pat_index
     if _llm is None:
         _tokenizer = AutoTokenizer.from_pretrained(
-            "google/flan-t5-base",
-            revision=MODEL_REVISIONS["google/flan-t5-base"]
+            GENERATOR_MODEL,
+            revision=MODEL_REVISIONS[GENERATOR_MODEL]
         )
         _llm = AutoModelForSeq2SeqLM.from_pretrained(
-            "google/flan-t5-base",
-            revision=MODEL_REVISIONS["google/flan-t5-base"]
+            GENERATOR_MODEL,
+            revision=MODEL_REVISIONS[GENERATOR_MODEL]
         )
         _llm.eval()
     if _pat_model is None:

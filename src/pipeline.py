@@ -19,7 +19,7 @@ from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from evidence_aligner import align_evidence
-from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints, MODEL_REVISIONS
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL
 import torch
 import pandas as pd
 import glob
@@ -48,9 +48,9 @@ class Pipeline:
             self.pat_meta_full = None
         self.notes_dir = "data/mimic/mimic_sample"
 
-        print("[Pipeline] Loading LLM (flan-t5-base)...")
-        self.tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base", revision=MODEL_REVISIONS["google/flan-t5-base"])
-        self.llm = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base", revision=MODEL_REVISIONS["google/flan-t5-base"])
+        print(f"[Pipeline] Loading LLM ({GENERATOR_MODEL})...")
+        self.tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL, revision=MODEL_REVISIONS[GENERATOR_MODEL])
+        self.llm = AutoModelForSeq2SeqLM.from_pretrained(GENERATOR_MODEL, revision=MODEL_REVISIONS[GENERATOR_MODEL])
         self.llm.eval()
         print("[Pipeline] LLM ready.")
 

@@ -18,7 +18,11 @@ MODEL_REVISIONS = {
     "pritamdeka/S-PubMedBert-MS-MARCO": "96786c7024f95c5aac7f2b9a18086c7b97b23036",
     "facebook/bart-large-mnli":         "d7645e127eaf1aefc7862fd59a17a5aa8558b8ce",
     "google/flan-t5-base":              "7bcac572ce56db69c1ea7c8af255c5d7c9672fc2",
+    "google/flan-t5-large":             "main",
 }
+
+# Active generator model — change this to switch between flan-t5-base and flan-t5-large
+GENERATOR_MODEL = "google/flan-t5-large"
 # ─────────────────────────────────────────────────────────────────────────────
 # ── Best weights from Week 11 grid search ─────────────────────────────────
 # Winner: alignment_heavy  ECE = 0.0593  (lowest among 5 combos)
