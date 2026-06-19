@@ -24,14 +24,14 @@ MODEL_REVISIONS = {
 # Active generator model — change this to switch between flan-t5-base and flan-t5-large
 GENERATOR_MODEL = "google/flan-t5-large"
 # ─────────────────────────────────────────────────────────────────────────────
-# ── Best weights from Week 11 grid search ─────────────────────────────────
-# Winner: alignment_heavy  ECE = 0.0593  (lowest among 5 combos)
-# Validated on 200 PubMedQA questions, seed=42 split by Farhana (Week 10)
-CONFIDENCE_WEIGHTS = (0.3, 0.3, 0.4)   # alpha, beta, gamma
+# ── Best weights from Week 20 grid search (flan-t5-large, 100 combos) ─────
+# Winner: strong_literature  ECE = 0.019, accuracy = 0.53
+# Validated on 200 PubMedQA questions. Source: results/grid_search/grid_search_results_v2.json
+CONFIDENCE_WEIGHTS = (0.5, 0.25, 0.25)   # alpha, beta, gamma
 
-# Disagreement penalty threshold (do not change)
-PENALTY_THRESHOLD  = 0.3
-PENALTY_MULTIPLIER = 0.7
+PENALTY_THRESHOLD  = 0.35
+PENALTY_MULTIPLIER = 0.8
+PENALTY_MULTIPLIER = 0.8
 NEUTRAL_SCORE      = 0.5
 
 # Retrieval settings
