@@ -34,6 +34,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from pmc_retriever import retrieve_literature
 from patient_retriever import load_resources, retrieve
+import glob
+import random
+from chunking_baselines import chunk_dynamic
+from evidence_aligner import align_evidence
 from confidence_scorer import compute_confidence
 from config import extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL
 
@@ -43,7 +47,7 @@ _llm        = None
 _pat_model  = None
 _pat_meta   = None
 _pat_index  = None
-
+NOTES_DIR = "data/mimic/mimic_sample"
 def _ensure_resources():
     """Load all models the first time any baseline function is called."""
     global _tokenizer, _llm, _pat_model, _pat_meta, _pat_index
@@ -321,7 +325,90 @@ def baseline_fixed_chunk_literature(query: str, k: int = 3) -> dict:
         "patient_summaries":    []
     }
 
+# ── BASELINE 5: Dual-source with RANDOM patient (ablation) ────────────────
+def baseline_dual_source_random_patient(query: str, k: int = 3) -> dict:
+    """
+    Ablation baseline: identical to dual_source, EXCEPT patient retrieval
+    is replaced with a RANDOMLY selected patient (no FAISS/ICD matching).
+    Literature retrieval is unchanged (real, relevant literature).
 
+    Purpose: isolate whether dual_source's accuracy gain over
+    literature_only comes from genuinely relevant patient retrieval,
+    or just from having extra patient text in the prompt regardless
+    of relevance.
+    """
+    _ensure_resources()
+
+    # Step 1: Retrieve literature normally (unchanged from dual_source)
+    lit_results = retrieve_literature(query, k=k)
+    if lit_results and isinstance(lit_results[0], dict):
+        lit_passages = [r.get("passage", str(r)) for r in lit_results]
+    else:
+        lit_passages = [str(r) for r in lit_results]
+
+    # Step 2: RANDOMLY select k patients — no matching, no relevance
+    random_rows = _pat_meta.sample(n=min(k, len(_pat_meta)))
+
+    pat_summaries = []
+    for _, row in random_rows.iterrows():
+        subject_id = row["subject_id"]
+        age        = row.get("age", "?")
+        gender     = row.get("gender", "?")
+        admission  = row.get("admission_type", "?")
+        icd        = row.get("icd_codes_top5", "?")
+        outcome    = row.get("discharge_location", "?")
+
+        # Same chunk-retrieval logic as pipeline.py's _get_patient_chunks
+        pattern = os.path.join(NOTES_DIR, f"note_{subject_id}-*.txt")
+        matches = glob.glob(pattern)
+        chunk_text = "No clinical notes available."
+        if matches:
+            with open(matches[0], "r", encoding="utf-8") as f:
+                note_text = f.read()
+            chunks = chunk_dynamic(note_text, query, top_n=2)
+            chunks = [c for c in chunks if c.strip()]
+            if chunks:
+                chunk_text = " ... ".join(c.strip() for c in chunks)
+        if not chunk_text or chunk_text.strip() in ("", "nan"):
+            bhc = str(row.get("bhc", ""))
+            if bhc.strip() and bhc.strip().lower() != "nan":
+                chunk_text = bhc[:800]
+            else:
+                chunk_text = "No clinical notes available."
+
+        pat_summaries.append(
+            f"Patient (age {age}, {gender}, {admission}, "
+            f"ICD: {icd}, outcome: {outcome}): {str(chunk_text)[:600]}"
+        )
+
+    # Step 3: Build prompt using the SAME evidence_aligner as dual_source
+    prompt = align_evidence(query, lit_passages, pat_summaries)
+
+    # Step 4: Generate and extract answer
+    answer_raw = _generate(prompt)
+    answer_extracted, extraction_method = _extract_answer(answer_raw)
+
+    # Step 5: Confidence scoring — same as dual_source (both sources "available")
+    scores = compute_confidence(
+        answer_extracted, lit_passages, pat_summaries,
+        lit_available=True, pat_available=True
+    )
+
+    return {
+        "baseline":             "dual_source_random_patient",
+        "query":                query,
+        "answer":               answer_extracted,
+        "answer_raw":           answer_raw,
+        "answer_extracted":     answer_extracted,
+        "extraction_method":    extraction_method,
+        "confidence":           round(scores["confidence"], 4),
+        "s_al":                 round(scores["s_al"], 4),
+        "s_ap":                 round(scores["s_ap"], 4),
+        "a_lp":                 round(scores["a_lp"], 4),
+        "penalty":              scores["penalty"],
+        "literature_passages":  lit_passages,
+        "patient_summaries":    pat_summaries
+    }
 # ── Run all 4 baselines on a single query ─────────────────────────────────
 def run_all_baselines(query: str) -> dict:
     """
