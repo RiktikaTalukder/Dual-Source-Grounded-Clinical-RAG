@@ -134,8 +134,8 @@ def dual_source_rag(query: str, top_k_lit: int = 3, top_k_pat: int = 3) -> dict:
     print(f"  [5/5] Scoring confidence...")
     from confidence_scorer import score_answer_literature, score_answer_patient, score_alignment
     alpha, beta, gamma = CONFIDENCE_WEIGHTS
-    s_al = score_answer_literature(answer, literature_passages)
-    s_ap = score_answer_patient(answer, patient_summaries)
+    s_al = score_answer_literature(answer_raw, literature_passages)
+    s_ap = score_answer_patient(answer_raw, patient_summaries)
     a_lp = score_alignment(literature_passages, patient_summaries)
     raw_conf = alpha * s_al + beta * s_ap + gamma * a_lp
     penalty_applied = a_lp < PENALTY_THRESHOLD

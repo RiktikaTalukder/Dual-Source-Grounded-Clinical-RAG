@@ -19,15 +19,29 @@ from patient_retriever import load_resources, retrieve
 from confidence_scorer import compute_confidence
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from evidence_aligner import align_evidence
-from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL
+from config import CONFIDENCE_WEIGHTS, PENALTY_THRESHOLD, PENALTY_MULTIPLIER, extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL, DEVICE
 import torch
 import pandas as pd
 import glob
 from chunking_baselines import chunk_dynamic
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Default equal weights (same as confidence_scorer.py Week 8)
 DEFAULT_WEIGHTS = CONFIDENCE_WEIGHTS   # (0.3, 0.3, 0.4) — best weights from Week 11 grid search
 
+import re as _re_module
+
+def _extract_answer(raw: str) -> tuple:
+    """Three-step answer extraction. Matches baselines.py exactly."""
+    first_token = raw.strip().split()[0] if raw.strip() else ""
+    cleaned = _re_module.sub(r'[^a-z]', '', first_token.lower())
+    if cleaned in ("yes", "no", "maybe"):
+        return cleaned, "direct"
+    for token in raw.strip().split()[:20]:
+        cleaned = _re_module.sub(r'[^a-z]', '', token.lower())
+        if cleaned in ("yes", "no", "maybe"):
+            return cleaned, "fallback_regex"
+    return "abstain", "abstain"
 class Pipeline:
     """
     Full dual-source RAG pipeline.
@@ -41,18 +55,18 @@ class Pipeline:
         """
         self.weights = weights if weights is not None else DEFAULT_WEIGHTS
         # Load patient metadata for discharge_location lookup
-        meta_path = "data/mimic/processed/patient_metadata_stratified.csv"
+        meta_path = os.path.join(BASE, "data", "mimic", "processed", "patient_metadata_stratified.csv")
         if os.path.exists(meta_path):
             self.pat_meta_full = pd.read_csv(meta_path)
         else:
             self.pat_meta_full = None
-        self.notes_dir = "data/mimic/mimic_sample"
+        self.notes_dir = os.path.join(BASE, "data", "mimic", "mimic_sample")
 
         print(f"[Pipeline] Loading LLM ({GENERATOR_MODEL})...")
         self.tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL, revision=MODEL_REVISIONS[GENERATOR_MODEL])
-        self.llm = AutoModelForSeq2SeqLM.from_pretrained(GENERATOR_MODEL, revision=MODEL_REVISIONS[GENERATOR_MODEL])
+        self.llm = AutoModelForSeq2SeqLM.from_pretrained(GENERATOR_MODEL, revision=MODEL_REVISIONS[GENERATOR_MODEL]).to(DEVICE)
         self.llm.eval()
-        print("[Pipeline] LLM ready.")
+        print(f"[Pipeline] LLM ready on {DEVICE}.")
 
         print("[Pipeline] Loading patient retriever...")
         self.pat_model, self.pat_meta, self.pat_index = load_resources()
@@ -62,7 +76,7 @@ class Pipeline:
         """Run LLM and return answer string."""
         inputs = self.tokenizer(
             prompt, return_tensors="pt", truncation=True, max_length=512
-        )
+        ).to(DEVICE)
         with torch.no_grad():
             outputs = self.llm.generate(
                 **inputs,
@@ -166,7 +180,7 @@ class Pipeline:
                     chunk_text = " ... ".join(c.strip() for c in chunks if c.strip())
                 else:
                     # fallback to BHC field if note file not found
-                    chunk_text = r.get("bhc", r.get("brief_hospital_course", "No clinical notes available."))
+                    chunk_text = r.get("bhc_preview", "No clinical notes available.")
                     if not chunk_text or str(chunk_text).strip() in ("", "nan"):
                         chunk_text = "No clinical notes available."
                 pat_summaries.append(
@@ -180,7 +194,6 @@ class Pipeline:
         prompt = align_evidence(query, lit_passages, pat_summaries)
 
         # Step 4: Generate answer and extract yes/no/maybe
-        from generator import _extract_answer
         answer_raw = self._generate(prompt)
         answer_extracted, extraction_method = _extract_answer(answer_raw)
 

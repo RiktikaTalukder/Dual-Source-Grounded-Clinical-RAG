@@ -32,6 +32,8 @@ from config import (
     PENALTY_MULTIPLIER,
     NEUTRAL_SCORE,
     MODEL_REVISIONS,
+    DEVICE,
+    DEVICE_INDEX,
 )
 
 # ── Load models once at module level ─────────────────────────────────────────
@@ -39,6 +41,7 @@ print("Loading SentenceTransformer (S-PubMedBert-MS-MARCO)...")
 _embedder = SentenceTransformer(
     "pritamdeka/S-PubMedBert-MS-MARCO",
     revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"],
+    device=DEVICE,
 )
 
 print("Loading NLI model (bart-large-mnli)...")
@@ -46,7 +49,7 @@ _nli = hf_pipeline(
     "text-classification",
     model="facebook/bart-large-mnli",
     revision=MODEL_REVISIONS["facebook/bart-large-mnli"],
-    device=-1,   # -1 = CPU. Change to 0 if you have a GPU.
+    device=DEVICE_INDEX,
 )
 print("Models loaded.")
 

@@ -8,11 +8,12 @@ Usage:
 
 import argparse
 import json
+import torch
 import os
 import sys
 import warnings
 warnings.filterwarnings("ignore")
-
+from config import MODEL_REVISIONS, DEVICE
 import numpy as np
 from sklearn.metrics import f1_score, confusion_matrix
 from scipy.stats import pearsonr
@@ -102,102 +103,69 @@ def compute_macro_f1(golds, preds):
 
 def compute_bertscore(data):
     """
-    BERTScore F1 between answer_raw and each retrieved literature passage.
-    Judge model: microsoft/deberta-xlarge-mnli.
-    Computed manually via mean-pooled embeddings + cosine similarity to avoid
-    bert_score 0.3.x tokenizer overflow bug with deberta on recent tokenizers.
-    Returns mean BERTScore F1 across all queries.
+    BERTScore F1 between answer_raw and each retrieved evidence passage
+    (literature and patient). Judge model: roberta-large, via the real
+    bert_score library.
+
+    NOTE: an earlier version of this function hand-rolled a mean-pooled-
+    cosine-similarity approximation instead of calling the real bert_score
+    library, to avoid a deberta-xlarge-mnli-specific tokenizer overflow bug.
+    That workaround was kept after switching judge models to roberta-large
+    in Week 20, but never re-verified against the real library for the new
+    model. Direct test confirmed the real library works fine with
+    roberta-large (F1=0.83 on a clean smoke test) — the mean-pooling
+    approximation was producing artificially uniform ~0.98 scores across
+    every method due to embedding anisotropy in non-fine-tuned mean-pooled
+    representations. Switched to the real library; see HANDOFF.md.
     """
     try:
-        from transformers import AutoTokenizer, AutoModel
+        from bert_score import score as bert_score_fn
     except ImportError:
-        return {"bertscore_mean": None, "bertscore_error": "transformers not installed"}
+        return {"bertscore_mean": None, "bertscore_error": "bert_score not installed"}
 
-    MODEL_NAME = "roberta-large"
-    MAX_LENGTH = 512
-
-    print(f"  [BERTScore] Loading {MODEL_NAME}...")
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-        model     = AutoModel.from_pretrained(MODEL_NAME)
-        model.eval()
-    except Exception as e:
-        return {"bertscore_mean": None, "bertscore_error": f"model load failed: {e}"}
-
-    def encode_texts(texts):
-        """Mean-pool last hidden state over non-padding tokens."""
-        enc = tokenizer(
-            texts,
-            padding=True,
-            truncation=True,
-            max_length=MAX_LENGTH,
-            return_tensors="pt",
-        )
-        with torch.no_grad():
-            out = model(**enc, output_hidden_states=False)
-        hidden = out.last_hidden_state          # (B, T, H)
-        mask   = enc["attention_mask"].unsqueeze(-1).float()
-        pooled = (hidden * mask).sum(1) / mask.sum(1)   # (B, H)
-        # L2-normalise
-        pooled = torch.nn.functional.normalize(pooled, dim=-1)
-        return pooled
-
-    def cosine_f1(cand_emb, ref_emb):
-        """Token-level BERTScore F1 approximation using sentence embeddings."""
-        sim = float(torch.dot(cand_emb, ref_emb).clamp(-1, 1))
-        # P = R = F1 = sim when using sentence-level embeddings
-        return sim
-
-    pairs        = []   # (query_idx, candidate_text, reference_text)
-    query_indices = []
-
+    cands, refs, query_indices = [], [], []
     for i, entry in enumerate(data):
-        answer   = entry.get("answer_raw", "") or ""
-        passages = entry.get("literature_passages", [])
-        if not passages or not answer.strip():
+        answer = entry.get("answer_raw", "") or ""
+        if not answer.strip():
             continue
-        for p in passages:
+        lit_passages = entry.get("literature_passages", [])
+        pat_passages = entry.get("patient_summaries", [])
+        all_passages = list(lit_passages) + list(pat_passages)
+        if not all_passages:
+            continue
+        for p in all_passages:
             text = p.get("text", "") if isinstance(p, dict) else str(p)
             if text.strip():
-                pairs.append((answer, text))
+                cands.append(answer)
+                refs.append(text)
                 query_indices.append(i)
 
-    if not pairs:
-        return {"bertscore_mean": None, "bertscore_error": "no valid candidate-reference pairs"}
+    if not cands:
+        return {"bertscore_mean": None, "bertscore_status": "N/A — no evidence retrieved for this method"}
 
-    print(f"  [BERTScore] Scoring {len(pairs)} pairs (deberta-xlarge-mnli)...")
+    print(f"  [BERTScore] Scoring {len(cands)} pairs (roberta-large, real bert_score library)...")
 
     try:
-        BATCH = 8
-        all_f1 = []
-        for start in range(0, len(pairs), BATCH):
-            batch      = pairs[start:start + BATCH]
-            cands      = [p[0] for p in batch]
-            refs       = [p[1] for p in batch]
-            cand_embs  = encode_texts(cands)
-            ref_embs   = encode_texts(refs)
-            for c_emb, r_emb in zip(cand_embs, ref_embs):
-                all_f1.append(cosine_f1(c_emb, r_emb))
-
-        from collections import defaultdict
-        query_scores = defaultdict(list)
-        for idx, f1 in zip(query_indices, all_f1):
-            query_scores[idx].append(f1)
-        per_query_means = [np.mean(v) for v in query_scores.values()]
-        mean_bs = float(np.mean(per_query_means))
-
-        status = "ok"
-        if not (0.5 <= mean_bs <= 0.9):
-            status = f"WARNING: mean BERTScore {mean_bs:.4f} outside expected 0.5-0.9 range"
-
-        return {
-            "bertscore_mean":    round(mean_bs, 4),
-            "bertscore_n_pairs": len(pairs),
-            "bertscore_status":  status,
-        }
+        P, R, F1 = bert_score_fn(cands, refs, model_type="roberta-large", lang="en", verbose=False)
     except Exception as e:
         return {"bertscore_mean": None, "bertscore_error": str(e)}
 
+    from collections import defaultdict
+    query_scores = defaultdict(list)
+    for idx, f1 in zip(query_indices, F1.tolist()):
+        query_scores[idx].append(f1)
+    per_query_means = [np.mean(v) for v in query_scores.values()]
+    mean_bs = float(np.mean(per_query_means))
+
+    status = "ok"
+    if not (0.5 <= mean_bs <= 0.9):
+        status = f"WARNING: mean BERTScore {mean_bs:.4f} outside expected 0.5-0.9 range"
+
+    return {
+        "bertscore_mean":    round(mean_bs, 4),
+        "bertscore_n_pairs": len(cands),
+        "bertscore_status":  status,
+    }
 
 # ── 4. Recall@K ──────────────────────────────────────────────────────────────
 
@@ -216,8 +184,11 @@ def compute_recall_at_k(data, k_values=(5, 10)):
                 "recall_error": "sentence_transformers not installed"}
 
     print("  [Recall@K] Loading all-mpnet-base-v2 judge model...")
-    model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
-
+    model = SentenceTransformer(
+        "sentence-transformers/all-mpnet-base-v2",
+        revision=MODEL_REVISIONS["sentence-transformers/all-mpnet-base-v2"],
+        device=DEVICE,
+    )
     recall_scores = {k: [] for k in k_values}
 
     for entry in data:
@@ -502,7 +473,7 @@ def evaluate(path, paired_path=None, save_json=True):
     results["reliability_diagram"] = diagram_path
 
     # 6. BERTScore
-    print("\n[6] BERTScore (deberta-xlarge-mnli judge)")
+    print("\n[6] BERTScore (roberta-large judge)")
     bs = compute_bertscore(data)
     results["bertscore"] = bs
     if bs.get("bertscore_mean") is not None:

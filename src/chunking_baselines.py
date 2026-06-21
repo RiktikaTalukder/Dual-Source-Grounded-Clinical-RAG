@@ -16,13 +16,12 @@ Design note:
 """
 
 from sentence_transformers import SentenceTransformer
-from config import MODEL_REVISIONS
+from config import MODEL_REVISIONS, DEVICE
 import faiss
 import numpy as np
 import pandas as pd
 import os
 
-# ── S-PubMedBert — loaded lazily on first use ──────────────────────
 _cb_model = None
 
 def _get_model():
@@ -31,9 +30,10 @@ def _get_model():
         print("Loading S-PubMedBert-MS-MARCO...")
         _cb_model = SentenceTransformer(
             "pritamdeka/S-PubMedBert-MS-MARCO",
-            revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"]
+            revision=MODEL_REVISIONS["pritamdeka/S-PubMedBert-MS-MARCO"],
+            device=DEVICE,
         )
-        print("S-PubMedBert loaded.")
+        print(f"S-PubMedBert loaded on {DEVICE}.")
     return _cb_model
 
 

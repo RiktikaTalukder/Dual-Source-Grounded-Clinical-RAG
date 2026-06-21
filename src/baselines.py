@@ -39,7 +39,7 @@ import random
 from chunking_baselines import chunk_dynamic
 from evidence_aligner import align_evidence
 from confidence_scorer import compute_confidence
-from config import extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL
+from config import extract_icd_hints, MODEL_REVISIONS, GENERATOR_MODEL, DEVICE
 
 # ── Lazy-loaded resources (only loaded when first needed) ─────────────────
 _tokenizer  = None
@@ -47,7 +47,10 @@ _llm        = None
 _pat_model  = None
 _pat_meta   = None
 _pat_index  = None
-NOTES_DIR = "data/mimic/mimic_sample"
+NOTES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data", "mimic", "mimic_sample"
+)
 def _ensure_resources():
     """Load all models the first time any baseline function is called."""
     global _tokenizer, _llm, _pat_model, _pat_meta, _pat_index
@@ -59,18 +62,17 @@ def _ensure_resources():
         _llm = AutoModelForSeq2SeqLM.from_pretrained(
             GENERATOR_MODEL,
             revision=MODEL_REVISIONS[GENERATOR_MODEL]
-        )
+        ).to(DEVICE)
         _llm.eval()
     if _pat_model is None:
         _pat_model, _pat_meta, _pat_index = load_resources()
 
 
 def _generate(prompt: str) -> str:
-    """Run flan-t5-base on a prompt and return the raw answer string.
-    max_new_tokens=10 matches generator.py — enough for yes/no/maybe."""
+    """Run flan-t5-large on a prompt and return the raw answer string."""
     _ensure_resources()
     inputs = _tokenizer(prompt, return_tensors="pt",
-                        truncation=True, max_length=512)
+                        truncation=True, max_length=512).to(DEVICE)
     with torch.no_grad():
         outputs = _llm.generate(
             **inputs,
@@ -131,7 +133,7 @@ def baseline_literature_only(query: str, k: int = 3) -> dict:
     answer_extracted, extraction_method = _extract_answer(answer_raw)
 
     scores = compute_confidence(
-        answer_extracted, passages, [],
+        answer_raw, passages, [],
         lit_available=True, pat_available=False
     )
 
@@ -169,19 +171,38 @@ def baseline_patient_only(query: str, k: int = 3) -> dict:
         top_k=k
     )
 
-    # Use real BHC chunks — fall back to metadata summary only if bhc absent
+    # Use real BHC chunks via dynamic chunking — same logic as
+    # pipeline.py's _get_patient_chunks() and baseline_dual_source_random_patient().
+    # Falls back to metadata summary only if no note file AND no bhc field exist.
     bhc_chunks = []
     if pat_results and isinstance(pat_results[0], dict):
         for r in pat_results:
-            chunks = r.get("bhc_chunks", [])
-            if chunks:
-                bhc_chunks.append(chunks[0])
-            else:
-                bhc_chunks.append(
+            subject_id = r.get("subject_id", "")
+            pattern = os.path.join(NOTES_DIR, f"note_{subject_id}-*.txt")
+            matches = glob.glob(pattern)
+            chunk_text = ""
+            if matches:
+                with open(matches[0], "r", encoding="utf-8") as f:
+                    note_text = f.read()
+                chunks = chunk_dynamic(note_text, query, top_n=2)
+                chunks = [c for c in chunks if c.strip()]
+                if chunks:
+                    chunk_text = " ... ".join(c.strip() for c in chunks)
+            if not chunk_text:
+                # No note file found — try the bhc field from metadata
+                row_match = _pat_meta[_pat_meta["subject_id"] == str(subject_id)]
+                if not row_match.empty:
+                    bhc = str(row_match.iloc[0].get("bhc", ""))
+                    if bhc.strip() and bhc.strip().lower() != "nan":
+                        chunk_text = bhc[:800]
+            if not chunk_text:
+                # Last resort — metadata summary string
+                chunk_text = (
                     f"Patient: age {r.get('age','?')}, "
                     f"gender {r.get('gender','?')}, "
                     f"ICD codes {r.get('icd_codes','?')}."
                 )
+            bhc_chunks.append(chunk_text)
     else:
         bhc_chunks = [str(r) for r in pat_results]
 
@@ -204,7 +225,7 @@ def baseline_patient_only(query: str, k: int = 3) -> dict:
     answer_extracted, extraction_method = _extract_answer(answer_raw)
 
     scores = compute_confidence(
-        answer_extracted, [], bhc_chunks,
+        answer_raw, [], bhc_chunks,
         lit_available=False, pat_available=True
     )
 
@@ -246,7 +267,7 @@ def baseline_no_retrieval(query: str) -> dict:
 
     # Both flags False — compute_confidence returns 0.5 immediately, no encoder called
     scores = compute_confidence(
-        answer_extracted, [], [],
+        answer_raw, [], [],
         lit_available=False, pat_available=False
     )
 
@@ -305,7 +326,7 @@ def baseline_fixed_chunk_literature(query: str, k: int = 3) -> dict:
     answer_extracted, extraction_method = _extract_answer(answer_raw)
 
     scores = compute_confidence(
-        answer_extracted, passages, [],
+        answer_raw, passages, [],
         lit_available=True, pat_available=False
     )
 
@@ -390,7 +411,7 @@ def baseline_dual_source_random_patient(query: str, k: int = 3) -> dict:
 
     # Step 5: Confidence scoring — same as dual_source (both sources "available")
     scores = compute_confidence(
-        answer_extracted, lit_passages, pat_summaries,
+        answer_raw, lit_passages, pat_summaries,
         lit_available=True, pat_available=True
     )
 

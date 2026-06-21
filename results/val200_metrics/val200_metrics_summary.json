@@ -3,28 +3,28 @@
     "abstain_rate": 0.015,
     "accuracy": 0.53,
     "macro_f1": 0.3136,
-    "ece": 0.1578,
+    "ece": 0.019,
     "recall@5": 0.585,
     "recall@10": 0.585,
-    "bertscore": 0.9816
+    "bertscore": 0.9838
   },
   "baseline_literature_only": {
     "abstain_rate": 0.01,
     "accuracy": 0.425,
     "macro_f1": 0.2744,
-    "ece": 0.178,
+    "ece": 0.2471,
     "recall@5": 0.585,
     "recall@10": 0.585,
     "bertscore": 0.9816
   },
   "baseline_patient_only": {
     "abstain_rate": 0.0,
-    "accuracy": 0.44,
-    "macro_f1": 0.3011,
-    "ece": 0.168,
+    "accuracy": 0.385,
+    "macro_f1": 0.2444,
+    "ece": 0.203,
     "recall@5": 0.0,
     "recall@10": 0.0,
-    "bertscore": null
+    "bertscore": 0.985
   },
   "baseline_no_retrieval": {
     "abstain_rate": 0.0,
@@ -36,6 +36,12 @@
     "bertscore": null
   },
   "baseline_fixed_chunk": {
-    "error": "Cannot send a request, as the client has been closed."
+    "abstain_rate": 0.01,
+    "accuracy": 0.425,
+    "macro_f1": 0.2744,
+    "ece": 0.2471,
+    "recall@5": 0.585,
+    "recall@10": 0.585,
+    "bertscore": 0.9815
   }
 }

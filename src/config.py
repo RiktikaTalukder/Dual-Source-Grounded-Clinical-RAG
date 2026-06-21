@@ -11,6 +11,10 @@ Weights = (alpha, beta, gamma)
   gamma = weight for A_LP (literature vs patient alignment)
 """
 
+import torch
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE_INDEX = 0 if torch.cuda.is_available() else -1
+
 # ── Pinned model revision hashes (Week 13 — GAP 10 fix) ──────────────────────
 # These hashes pin the exact model versions used across all src/ files.
 # Do NOT change these unless intentionally upgrading a model.
@@ -18,7 +22,9 @@ MODEL_REVISIONS = {
     "pritamdeka/S-PubMedBert-MS-MARCO": "96786c7024f95c5aac7f2b9a18086c7b97b23036",
     "facebook/bart-large-mnli":         "d7645e127eaf1aefc7862fd59a17a5aa8558b8ce",
     "google/flan-t5-base":              "7bcac572ce56db69c1ea7c8af255c5d7c9672fc2",
-    "google/flan-t5-large":             "main",
+    "google/flan-t5-large":             "0613663d0d48ea86ba8cb3d7a44f0f65dc596a2a",
+    "roberta-large":                    "722cf37b1afa9454edce342e7895e588b6ff1d59",
+    "sentence-transformers/all-mpnet-base-v2": "e8c3b32edf5434bc2275fc9bab85f82640a19130",
 }
 
 # Active generator model — change this to switch between flan-t5-base and flan-t5-large
@@ -30,7 +36,6 @@ GENERATOR_MODEL = "google/flan-t5-large"
 CONFIDENCE_WEIGHTS = (0.5, 0.25, 0.25)   # alpha, beta, gamma
 
 PENALTY_THRESHOLD  = 0.35
-PENALTY_MULTIPLIER = 0.8
 PENALTY_MULTIPLIER = 0.8
 NEUTRAL_SCORE      = 0.5
 

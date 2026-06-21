@@ -24,14 +24,11 @@ data/*
 !data/pmc_literature/
 data/pmc_literature/*
 !data/pmc_literature/pmc_sample/
+!data/indexes/
+data/indexes/*
 !data/indexes/pmc_texts.json
-
 !data/pubmedqa/
 !data/pubmedqa/processed/
-
-# explicitly keep these ignored
-data/pubmedqa/raw/
-data/pubmedqa/README.md
 
 # =========================
 # RESULTS (ignore all, allow summaries)
@@ -40,6 +37,7 @@ results/*
 !results/*.csv
 !results/*.json
 !results/figures/
+!results/val200_metrics/
 
 # =========================
 # IMAGES (allow important ones)
