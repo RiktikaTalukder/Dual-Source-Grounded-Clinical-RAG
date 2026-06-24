@@ -6,7 +6,7 @@
     "ece": 0.019,
     "recall@5": 0.585,
     "recall@10": 0.585,
-    "bertscore": 0.9838
+    "bertscore": 0.757
   },
   "baseline_literature_only": {
     "abstain_rate": 0.01,
@@ -15,7 +15,7 @@
     "ece": 0.2471,
     "recall@5": 0.585,
     "recall@10": 0.585,
-    "bertscore": 0.9816
+    "bertscore": 0.7526
   },
   "baseline_patient_only": {
     "abstain_rate": 0.0,
@@ -24,7 +24,7 @@
     "ece": 0.203,
     "recall@5": 0.0,
     "recall@10": 0.0,
-    "bertscore": 0.985
+    "bertscore": 0.745
   },
   "baseline_no_retrieval": {
     "abstain_rate": 0.0,
@@ -42,6 +42,6 @@
     "ece": 0.2471,
     "recall@5": 0.585,
     "recall@10": 0.585,
-    "bertscore": 0.9815
+    "bertscore": 0.7527
   }
 }
