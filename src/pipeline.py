@@ -27,7 +27,7 @@ from chunking_baselines import chunk_dynamic
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Default equal weights (same as confidence_scorer.py Week 8)
-DEFAULT_WEIGHTS = CONFIDENCE_WEIGHTS   # (0.3, 0.3, 0.4) — best weights from Week 11 grid search
+DEFAULT_WEIGHTS = CONFIDENCE_WEIGHTS   # (0.5, 0.25, 0.25) -- best weights from Week 20 100-combo grid search
 
 import re as _re_module
 

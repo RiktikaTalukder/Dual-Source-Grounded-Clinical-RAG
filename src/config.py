@@ -49,7 +49,7 @@ GRID_SEARCH_RESULTS = {
     "literature_heavy":     {"weights": (0.50, 0.30, 0.20), "ece": 0.0929},
     "balanced_lit_patient": {"weights": (0.40, 0.40, 0.20), "ece": 0.0787},
     "alignment_heavy":      {"weights": (0.30, 0.30, 0.40), "ece": 0.0593},
-    "strong_literature":    {"weights": (0.50, 0.25, 0.25), "ece": 0.0941},
+    "strong_literature":    {"weights": (0.50, 0.25, 0.25), "ece": 0.019},  # Week 20 100-combo winner, corrected from stale Week 11 value
 }
 # ── Shared ICD keyword extractor (used by generator, pipeline, baselines) ──
 import re as _re

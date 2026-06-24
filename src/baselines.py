@@ -2,7 +2,7 @@
 baselines.py
 Week 18 — Riktika (M1)
 
-Implements all 4 baseline methods using the same LLM (flan-t5-base)
+Implements all 4 baseline methods using the same LLM (flan-t5-large)
 and same evaluation setup as generator.py (dual_source_rag).
 
 Changes from Week 10 version:
