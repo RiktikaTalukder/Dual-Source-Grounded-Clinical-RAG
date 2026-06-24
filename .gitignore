@@ -28,7 +28,9 @@ data/pmc_literature/*
 data/indexes/*
 !data/indexes/pmc_texts.json
 !data/pubmedqa/
+data/pubmedqa/*
 !data/pubmedqa/processed/
+!data/pubmedqa/README.md
 
 # =========================
 # RESULTS (ignore all, allow summaries)
