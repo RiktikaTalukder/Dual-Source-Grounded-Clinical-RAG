@@ -479,6 +479,8 @@ def evaluate(path, paired_path=None, save_json=True):
     if bs.get("bertscore_mean") is not None:
         print(f"    bertscore_mean: {bs['bertscore_mean']}")
         print(f"    status        : {bs['bertscore_status']}")
+    elif bs.get("bertscore_status"):
+        print(f"    status        : {bs['bertscore_status']}")
     else:
         print(f"    ERROR: {bs.get('bertscore_error')}")
 
