@@ -27,6 +27,7 @@ METHODS = [
     ("baseline_patient_only",   "metrics_baseline_patient_only_val200.json"),
     ("baseline_no_retrieval",   "metrics_baseline_no_retrieval_val200.json"),
     ("baseline_fixed_chunk",    "metrics_baseline_fixed_chunk_val200.json"),
+    ("baseline_dual_source_random_patient", "metrics_baseline_dual_source_random_patient_val200.json"),
 ]
 
 def main():

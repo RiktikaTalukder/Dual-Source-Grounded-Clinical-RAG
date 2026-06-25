@@ -109,6 +109,10 @@ def main():
         from baselines import baseline_fixed_chunk_literature
         run_method("baseline_fixed_chunk", baseline_fixed_chunk_literature, questions,
                     os.path.join(OUT_DIR, "baseline_fixed_chunk_val200.json"))
+    elif method_name == "baseline_dual_source_random_patient":
+        from baselines import baseline_dual_source_random_patient
+        run_method("baseline_dual_source_random_patient", baseline_dual_source_random_patient, questions,
+                    os.path.join(OUT_DIR, "baseline_dual_source_random_patient_val200.json"))
     else:
         print(f"Unknown method: {method_name}")
         sys.exit(1)
