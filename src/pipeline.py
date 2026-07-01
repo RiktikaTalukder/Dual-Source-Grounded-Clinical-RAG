@@ -75,7 +75,7 @@ class Pipeline:
     def _generate(self, prompt: str) -> str:
         """Run LLM and return answer string."""
         inputs = self.tokenizer(
-            prompt, return_tensors="pt", truncation=True, max_length=512
+            prompt, return_tensors="pt", truncation=True, max_length=800
         ).to(DEVICE)
         with torch.no_grad():
             outputs = self.llm.generate(
@@ -191,7 +191,7 @@ class Pipeline:
             pat_summaries = [str(r) for r in pat_results]
 
         # Step 3: Build prompt using evidence_aligner (consistent with generator.py)
-        prompt = align_evidence(query, lit_passages, pat_summaries)
+        prompt = align_evidence(query, lit_passages, pat_summaries, tokenizer=self.tokenizer)
 
         # Step 4: Generate answer and extract yes/no/maybe
         answer_raw = self._generate(prompt)

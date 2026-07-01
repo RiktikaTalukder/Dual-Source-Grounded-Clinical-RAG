@@ -72,7 +72,7 @@ def _generate(prompt: str) -> str:
     """Run flan-t5-large on a prompt and return the raw answer string."""
     _ensure_resources()
     inputs = _tokenizer(prompt, return_tensors="pt",
-                        truncation=True, max_length=512).to(DEVICE)
+                        truncation=True, max_length=800).to(DEVICE)
     with torch.no_grad():
         outputs = _llm.generate(
             **inputs,
@@ -114,6 +114,7 @@ def baseline_literature_only(query: str, k: int = 3) -> dict:
     else:
         passages = [str(r) for r in lit_results]
 
+    passages = [p[:500] for p in passages]  # token-budget guard
     lit_block = "\n".join(
         f"[LIT {i+1}] {p.strip()}" for i, p in enumerate(passages)
     )
@@ -206,6 +207,7 @@ def baseline_patient_only(query: str, k: int = 3) -> dict:
     else:
         bhc_chunks = [str(r) for r in pat_results]
 
+    bhc_chunks = [c[:500] for c in bhc_chunks]  # token-budget guard
     pat_block = "\n".join(
         f"[PATIENT {i+1}] {s.strip()}" for i, s in enumerate(bhc_chunks)
     )
@@ -307,6 +309,7 @@ def baseline_fixed_chunk_literature(query: str, k: int = 3) -> dict:
         chunks = chunk_fixed(p, size=512, overlap=0.10)
         passages.append(chunks[0] if chunks else p)
 
+    passages = [p[:500] for p in passages]  # token-budget guard
     lit_block = "\n".join(
         f"[LIT {i+1}] {p.strip()}" for i, p in enumerate(passages)
     )
@@ -403,7 +406,7 @@ def baseline_dual_source_random_patient(query: str, k: int = 3) -> dict:
         )
 
     # Step 3: Build prompt using the SAME evidence_aligner as dual_source
-    prompt = align_evidence(query, lit_passages, pat_summaries)
+    prompt = align_evidence(query, lit_passages, pat_summaries, tokenizer=_tokenizer)
 
     # Step 4: Generate and extract answer
     answer_raw = _generate(prompt)
